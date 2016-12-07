@@ -1,0 +1,2398 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Challenge Data Tool</title>
+    <base target="_blank">
+
+<!--
+
+This code is licensed under the same terms as Habitica:
+    https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
+
+https://github.com/Alys/tools-for-habitrpg/blob/master/habitrpg_user_data_display.html
+
+https://oldgods.net/habitrpg/habitrpg_user_data_display.html
+    or http://is.gd/hrpguserdata
+
+Contributors:
+    cTheDragons https://github.com/cTheDragons
+	based on code from
+	Alys (Alice Harris), lady_alys@oldgods.net https://github.com/Alys
+    thepeopleseason (James Hsiao) https://github.com/thepeopleseason
+    goldfndr (Richard Finegold) https://github.com/goldfndr
+    Blade Barringer https://github.com/crookedneighbor
+    donoftime https://github.com/donoftime
+    me_and (Adam Dinwoodie) https://github.com/me-and
+	
+
+-->
+
+
+    <meta name="description" content="Challenge Data Tool" />
+    <meta name="author" content="cTheDragons" />
+
+	
+	
+
+	<script src="https://code.jquery.com/jquery-1.12.3.js"></script> <!--- jquery -->
+	<script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script> <!--- time functions -->
+	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
+
+	 <!--- https://datatables.net/download/ -->
+	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/b-1.2.2/b-colvis-1.2.2/b-flash-1.2.2/b-html5-1.2.2/b-print-1.2.2/se-1.2.0/datatables.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/b-1.2.2/b-colvis-1.2.2/b-flash-1.2.2/b-html5-1.2.2/b-print-1.2.2/se-1.2.0/datatables.min.css"/>
+ 	
+<script type="text/javascript">
+$(function() { // wraps around all our code to not pollute global namespace
+
+//////////////////////////////////////////////////////////////////////
+////   Global Variables                              /////////////////
+//////////////////////////////////////////////////////////////////////
+
+var content;  	// holds site-wide content (gear names and stats, quests, etc)
+var user;    	 // holds user's data
+var challenge;	// holds all challenge data
+var challengeTasks;	// holds all challenge data
+var group;	// holds all challenge data
+var memberListToFetch = []; //holds memberList that is fetchng (30 limit)  $$$$$
+var memberListToFetch_idOnly = []; //holds memberList that is fetchng (30 limit) $$$$$
+var members;  // hold members of groups $$$$$
+var membersChallenge;  // hold members of groups $$$$$
+var lastListMemberId = '';  // hold last member id to be used with groups $$$$$
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+////   Sections                              /////////////////
+//////////////////////////////////////////////////////////////////////
+
+		// TO ADD NEW SECTION: To create a Table of Content entry and Main,
+		// add the unique identifier for the new section to array section to Display. 
+		// If it is a section that displays table content update sectionTables too. 
+		// If new content is required see formatAllDataAndCollate() 
+		
+		//If custom sections required add to below the Sections data... (Not there yet)
+
+
+//index array for looping
+var dashboardToDisplay = [
+/*	{id: 'memberCount', label: 'Total', hoverText: 'Total Members in the Group', value: 'group.memberCount', status: 'neutral', showOnly: ''},
+*/	{id: 'memberFetch', label: 'Total Partipants', hoverText: 'Total Members in the Challenge', value: 'group.memberTotals.fetchCount', status: 'neutral', showOnly: ''},
+/*	{id: 'memberQuest', label: 'Questing', hoverText: 'Number of members who have elected to quest', value: 'group.quest.memberCount', status: 'neutral', showOnly: 'party'},
+*/	{id: 'memberFetch', label: 'In Inn', hoverText: 'Total Members In the Inn', value: 'group.memberTotals.inInn', status: 'danger', showOnly: ''},
+/*	{id: 'memberFetch', label: 'Active < 12 hr', hoverText: 'Total Members Active in 12 Hours or Less', value: 'group.memberTotals.activeLess12Hr', status: 'safe', showOnly: ''},
+	{id: 'memberFetch', label: 'Active 12 hr < 24 hr', hoverText: 'Total Members Active between 12 and 24 Hours', value: 'group.memberTotals.activeLess24Hr - group.memberTotals.activeLess12Hr', status: 'safe', showOnly: ''},
+	{id: 'memberFetch', label: 'Active 24 hr < 1 wk', hoverText: 'Total Members Active between 24 Hours and 1 week', value: 'group.memberTotals.activeLessWeek - group.memberTotals.activeLess24Hr', status: 'neutral', showOnly: ''},
+	{id: 'memberFetch', label: 'Active 1 wk < 1 mth', hoverText: 'Total Members Active between 1 week and 1 month', value: 'group.memberTotals.activeLessMonth - group.memberTotals.activeLessWeek', status: 'neutral', showOnly: ''},
+	{id: 'memberFetch', label: 'Active > 1 month', hoverText: 'Total Members Active over 1 month', value: 'group.memberTotals.fetchCount - group.memberTotals.activeLessMonth', status: 'danger', showOnly: ''}
+*/
+]
+
+
+var sectionsToDisplay = [	
+	{type: 'heading', id: 'headingGroup', title: 'Challenge Details', showOnly: '', description: ''},
+		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: '', description: 'Overview of Challenge with Guild stats.', functionCreate: 'formatOverviewSection'},
+	{type: 'heading', id: 'headingGroup2', title: '', showOnly: 'party', description: ''},
+		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: '', description: 'Exportable table of the chat from the Challenge. The easy way to see if your challengers posted new prompts. Or to track team work.'},
+		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: 'party', description: 'Will only show if party is selected. Exportable table of the chat from the Challenge without system messages.'},
+	{type: 'heading', id: 'headingMember', title: 'Member Information', showOnly: '', description: ''},
+		{type: 'sectionTable', id: 'memberList', title: 'Member List', showOnly: '', description: 'A table listing profile information of each member of the group.'},
+		{type: 'sectionTable', id: 'memberActivity', title: 'Member Activity', showOnly: '', description: 'A table listing how active each member of the group is (date-hour format).'},
+		{type: 'sectionTable', id: 'memberStats', title: 'Member Stats', showOnly: '', description: 'A table listing health, mana, XP and other stats of each member.'},
+		{type: 'sectionTable', id: 'memberAttributes', title: 'Member Attributes', showOnly: '', description: 'A table listing strength, intelligence, perception and constitution of the members.'},
+]
+
+var sectionTables =	{}
+sectionTables['chatExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Admin', 'Posted', 'Epoch', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
+	babyBear: {show: [0,1,6,8], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		var chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
+		if (chatDayPeriod < 5){
+			//set time into minutes
+			timeDivision = (60 * 1000)
+			timeDivisonName = ' min'
+		} else if (chatDayPeriod < 20) {
+			//set time into hours
+			timeDivision = (60 * 60 * 100)
+			timeDivisonName = ' hr'
+		} else {
+			//set time into days
+			timeDivision = (60 * 60 * 24 * 1000)
+			timeDivisonName = ' day'
+		}
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + chatDayPeriod + ' days)</p>'
+		return html 
+	}
+}
+sectionTables['chatNotSystemExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Admin', 'Posted', 'Epoch', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
+	babyBear: {show: [0,1,6,8], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		var chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
+		if (chatDayPeriod < 5){
+			//set time into minutes
+			timeDivision = (60 * 1000)
+			timeDivisonName = ' min'
+		} else if (chatDayPeriod < 20) {
+			//set time into hours
+			timeDivision = (60 * 60 * 100)
+			timeDivisonName = ' hr'
+		} else {
+			//set time into days
+			timeDivision = (60 * 60 * 24 * 1000)
+			timeDivisonName = ' day'
+		}
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + chatDayPeriod + ' days)</p>'
+		return html 
+	}
+}
+
+
+sectionTables['memberList'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Admin', 'Can PM?'],
+	dataTable: ['id', 'profile.namePretty', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin', 'inbox.canPM'],
+	babyBear: {show: [0,1,3,4], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,4,5,6,7], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 9 ]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+sectionTables['memberActivity'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.totalLines', 'lastChat.textPretty', 'preferences.sleep'],
+	babyBear: {show: [0,1,6,12], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,6,7,8,9,12], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 12 ]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+sectionTables['memberStats'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Health', 'Current Mana', 'Mana Max', 'Current Mana %', 'Gold', 'XP', 'XP to Next Level' ], 
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'stats.hpPretty', 'stats.mpPretty', 'stats.maxMPPretty', 'stats.percentageMP', 'stats.gpPretty', 'stats.expPretty', 'stats.toNextLevelPretty'],
+	babyBear: {show: [0,1,8,9,10], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,5,6,8,9,10,11], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [8,9,10,11,12,13,14]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+sectionTables['memberAttributes'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Last Cron', 'STR lvl', 'STR alloc', 'STR buff', 'STR gear', 'STR gear+', 'STR total', 'INT lvl', 'INT alloc', 'INT buff', 'INT gear', 'INT gear+', 'INT total',  'CON lvl', 'CON alloc', 'CON buff', 'CON gear', 'CON gear+', 'CON total', 'PER lvl', 'PER alloc', 'PER buff', 'PER gear', 'PER gear+', 'PER total'], 
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl', 'lastLoggedIn.shortDate', 'attributeTotals.str.lvl', 'attributeTotals.str.allocated', 'attributeTotals.str.buff', 'attributeTotals.str.gear', 'attributeTotals.str.gearBuff', 'attributeTotals.str.total', 'attributeTotals.int.lvl', 'attributeTotals.int.allocated', 'attributeTotals.int.buff', 'attributeTotals.int.gear', 'attributeTotals.int.gearBuff', 'attributeTotals.int.total', 'attributeTotals.con.lvl', 'attributeTotals.con.allocated', 'attributeTotals.con.buff', 'attributeTotals.con.gear', 'attributeTotals.con.gearBuff', 'attributeTotals.con.total', 'attributeTotals.per.lvl', 'attributeTotals.per.allocated', 'attributeTotals.per.buff', 'attributeTotals.per.gear', 'attributeTotals.per.gearBuff', 'attributeTotals.per.total'],
+	babyBear: {show: [1,2,10,16,22,28], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [1,2,3,4,10,16,22,28], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+
+	
+			
+
+//export options	
+var exportOptions = [
+	{id: 'babyBear', shortDesc: 'Baby Bear', longDesc: 'Displays & exports short table format'},
+	{id: 'mamaBear', shortDesc: 'Mama Bear', longDesc: 'Displays & exports medium table format'},
+	{id: 'papaBear', shortDesc: 'Papa Bear', longDesc: 'Displays & exports max table format'}
+];
+var exportFormats = [
+	{id: 0, shortDesc: 'Warm Porridge', longDesc: 'Displays & exports with Emoji & Text converted but HTML removed', convertMarkup: true, removeHtml: true},
+	{id: 1, shortDesc: 'Hot Porridge', longDesc: 'Displays & exports in exact Habitica HTML format', convertMarkup: true, removeHtml: false},
+	{id: 2, shortDesc: 'Cold Porridge', longDesc: 'Displays & exports in raw format', convertMarkup: false, removeHtml: false}
+];
+
+
+				 
+					
+//////////////////////////////////////////////////////////////////////
+////   Global Connection Variables      //////////////////////////////
+//////////////////////////////////////////////////////////////////////
+var serverName					= 'Habitica'; // used in "loading" message
+var serverUrl					= 'https://habitica.com/api/v3';
+var serverPathContent			= '/content?language=en';
+var serverPathUser				= '/user';
+var serverPathChallenge			= '/challenges'
+var serverPathChallengeTasks	= '/tasks/challenge'
+
+var serverPathGroup				= '/groups' //$$$$$
+var serverPathParty				= '/groups/party'
+var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //$$$$$
+var serverPathMemberProfilePart	= '/members' //will be /members/:uid //$$$$$
+
+var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/' 
+var imageShopPrefix             =  'shop_'
+var imageFileSuffix				= '.png'
+var userId						= '';
+var apiToken					= '';
+var challengeId 				= ''; //holds selected challenge (drop down)
+var groupId 					= ''; //holds group id from 
+var exportOption 			 	= 'papaBear';
+var exportFormat			 	= 0;
+var debug						= true;
+var debugShowObject				= true;
+
+
+if (debug) console.log('debug 1');
+
+var sectionOpen = ''; // holds the ID attribute of a section of the page;
+                      // persists through re-fetch of data so we can
+                      // reopen that section when the new data arrives
+var tellMe = '<a href="https://github.com/cTheDragons">tell me</a>';
+
+var neverDate = '1900-01-01'
+
+//////////////////////////////////////////////////////////////////////
+////   allow Show/Hide Toggling to work    ///////////////////////////
+//////////////////////////////////////////////////////////////////////
+enableShowHideToggling(); // needed here to enable Version Changes link
+var openRelatedSections = function(){} // redefined later when user data exists
+function enableShowHideToggling() {
+if (debug) console.log('debug enableShowHideToggling');
+
+	//Populate Selector
+	var html =  getExportOptionsHtml()
+	var htmlDesc =  getExportDescHtml()
+	var htmlSection = getSectionDescHtml()
+	
+	$('#exportOptionSelector').html(html)
+	$('#exportOptionDesc').html(htmlDesc)
+	$('#sectionDesc').html(htmlSection)
+
+    // $('.showHideToggle').click(function(event)
+    $('body').on('click', '.showHideToggle', function(event){
+        var target = $(this).data("target");
+        var wantToShow = (! $('#' + target).is(':visible')
+                       || $(this).data("forceopen"));
+            // wantToShow is false if the target is already open
+            // (i.e., the user wants to close it)
+            // unless the toggle's attributes force it to always be
+            // opened (e.g., a link from the dashboard)
+        var linktext = $(this).data("linktext") || false;
+        if ($(this).data("closemainsections")) {
+            $('#MAIN > *').hide();
+        }
+        if (wantToShow) {
+            sectionOpen = target;
+            $('#' + target).show();
+            if (linktext) {
+                $(this).text('hide ' + linktext);
+            }
+            openRelatedSections();
+        }
+        else {
+            $('#' + target).hide();
+            if (linktext) {
+                $(this).text('show ' + linktext);
+            }
+            if ($(this).data("scrolltotop")) {
+                window.scrollTo(0, 0);
+            }
+        }
+        var toggleTarget = $(this).data("resettoggletext") || false;
+        if (toggleTarget) {
+            $('#' + toggleTarget).text('show '
+                        + $('#' + toggleTarget).data("linktext"));
+        }
+    });
+    $('body').on('click', '.mainSectionClose', function(event){
+        $('#MAIN > *').hide();
+        window.scrollTo(0, 0);
+    });
+	
+	function getExportOptionsHtml()
+	{
+		var html = '';
+		
+		html +=  '<label for="exportOption"><span>Column Option</span>'
+		html +=  '<select name="exportOption" id="exportOption">';
+		if (debugShowObject) console.log(exportOptions);
+		$.each(exportOptions, function(index, obj){
+			html += '<option value="' + obj.id + '">' + obj.shortDesc + '</option>';
+		});
+		html += '</select></label>'
+
+		html +=  '<label for="exportFormat"><span>Text Format</span>'
+		html +=  '<select name="exportFormat" id="exportFormat">';
+		if (debugShowObject) console.log(exportOptions);
+		$.each(exportFormats, function(index, obj){
+			html += '<option value="' + obj.id + '">' + obj.shortDesc + '</option>';
+		});
+		html += '</select></label>'
+
+		
+		return html
+	}
+	
+	function getExportDescHtml()
+	{
+		var html = '';
+		
+		html +=  '<p class="highlight">Column Options Description:</p>'
+		html +=  '<ul>';
+		$.each(exportOptions, function(index, obj){
+			html += '<li><span class="lowlight">' + obj.shortDesc + '</span>: ' + obj.longDesc + '</li>';
+		});
+		html += '</ul>'
+
+		html +=  '<p class="highlight">Text Format Description:</p>'
+		html +=  '<ul>';
+		$.each(exportFormats, function(index, obj){
+			html += '<li><span class="lowlight">' + obj.shortDesc + '</span>: ' + obj.longDesc + '</li>';
+		});
+		html += '</ul>'
+		
+		return html
+	}
+	
+	function getSectionDescHtml()
+	{
+		var html = '';
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			if (obj.type != 'heading') html += '<li><span class="subheading">' + obj.title + '</span>: ' + obj.description + '</li>';
+		});
+		
+		return html
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+////   Get UUID from URL      ////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+var url_vars = getUrlVars();
+if (url_vars.uuid) {
+    $("#userId").val(url_vars.uuid);
+}
+function getUrlVars() {
+    // Function found at http://stackoverflow.com/questions/4656843/jquery-get-querystring-from-url#answer-4656873
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+////   Login events      /////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+$('#userApiDetailsForm').submit(function(event){
+if (debug) console.log('debug #userApiDetailsForm (Login Events)');
+	/* The user manually submitted the API connection form. */
+    userId   = $('#userId').val();
+    apiToken = $('#apiToken').val();
+	challengeId = $('#challengeId').val();
+	exportOption = $('#exportOption').val()
+    exportFormat = $('#exportFormat').val()
+	if (debugShowObject) console.log('exportFormat: ' + exportFormat );
+
+	if (debug) console.log('Challenge ID is ' +  challengeId);
+	challengeId = challengeId.slice(-36)
+
+	if (debug) console.log('Challenge ID is ' +  challengeId);
+	
+    fetchData();
+});
+
+
+//////////////////////////////////////////////////////////////////////
+////   Login and Data Fetch Functions   //////////////////////////////
+//////////////////////////////////////////////////////////////////////
+function fetchData() {
+    if (debug) console.log('debug 2');
+	if (debug) console.log('Challenge ID is ' +  challengeId);
+    $('#loading #serverName').text(serverName);
+    $('#loading .good').show();
+    $('#loading .bad' ).hide();
+	
+	lastListMemberId = '' // clear from previous fetches
+	members = []; // clear from previous fetches
+	membersChallenge = []; // clear from previous fetches
+	memberListToFetch = [];  // clear from previous fetches
+	
+	var lastMemberIndex = 0 // clear from previous fetches
+	var lastMemberChallengeIndex = 0 // clear from previous fetches
+	
+    var ajaxRunningCount = 4; // drops to 0 when all calls have succeeded
+	var ajaxRunningCount_Group = 1;
+
+	
+    // fetch the user's own content (guilds, parties):
+	$('#loading #statusFetch').text('Asking for User Data');
+    $.ajax({
+        url: serverUrl + serverPathUser,
+        type: 'GET',
+        dataType: 'json',
+        cache: false,
+        beforeSend: function(xhr){
+                xhr.setRequestHeader('x-api-user', userId);
+                xhr.setRequestHeader('x-api-key',  apiToken);
+            },
+        success: fetchUserSuccess,
+        error: fetchFailure
+    });
+
+    // fetch the site-wide content (gear names and stats, etc):
+	$('#loading #statusFetch').text('Asking for Generic Content');
+    $.ajax({
+        url: serverUrl + serverPathContent,
+        type: 'GET',
+        dataType: 'json',
+        cache: true,
+        success: fetchContentSuccess,
+        error: fetchFailure
+    });
+	
+    // fetch the site-wide content (gear names and stats, etc):
+	$('#loading #statusFetch').text('Asking for Challenge Content');
+    $.ajax({
+		url: serverUrl + serverPathChallenge + '/' + challengeId,
+		type: 'GET',
+		dataType: 'json',
+		cache: false,
+		beforeSend: function(xhr){
+				xhr.setRequestHeader('x-api-user', userId);
+				xhr.setRequestHeader('x-api-key',  apiToken);
+		},
+		success: fetchChallengeSuccess,
+		error: fetchFailure  //$$$ Fetch all guild data instead?
+    });
+	
+	
+	 // fetch the site-wide content (gear names and stats, etc):
+	$('#loading #statusFetch').text('Asking for Challenge Content');
+    $.ajax({
+		url: serverUrl + serverPathChallengeTasks + '/' + challengeId,
+		type: 'GET',
+		dataType: 'json',
+		cache: false,
+		beforeSend: function(xhr){
+				xhr.setRequestHeader('x-api-user', userId);
+				xhr.setRequestHeader('x-api-key',  apiToken);
+		},
+		success: fetchChallengeTasksSuccess,
+		error: fetchFailure  //$$$ Fetch all guild data instead?
+    });
+	
+	
+	function fetchFailure(ChallengeNotFound) {
+        if (debug) console.log('debug fetchFailure start');
+        $('#loading .good').hide();
+        $('#loading .bad' ).show();
+        $('#documentationAndForm').show(); // in case user has done a re-fetch
+        $('#documentationAndFormClose').hide();
+		console.log(ChallengeNotFound)
+        if (debug) console.log('debug fetchFailure end');
+    }
+	function fetchUserSuccess(data) {
+        if (debug) console.log('debug parseData User success start');
+		$('#loading #statusFetch').text('Fetching User Data');
+        user = data.data;
+		
+		if (debugShowObject) console.log(user);
+        ajaxRunningCount--;
+
+		
+        if (ajaxRunningCount + ajaxRunningCount_Group === 0) { // all ajax calls have finished
+            fetchMemberList();
+        }
+    }
+	function fetchContentSuccess(data) {
+        if (debug) console.log('debug parseData Content success start');
+		$('#loading #statusFetch').text('Fetching Generic Content');
+        content = data.data;
+		if (debugShowObject) console.log(content);
+        ajaxRunningCount--;
+        if (ajaxRunningCount + ajaxRunningCount_Group === 0) { // all ajax calls have finished
+            fetchMemberList();
+        }
+    }
+  
+  
+	function fetchChallengeSuccess(data) {
+		if (debug) console.log('debug Challenge Sucess data start');
+		challenge = data.data;
+		if (debugShowObject) console.log(challenge);
+		
+		//if (debugShowObject) console.log(groups);
+		ajaxRunningCount--; 
+		if (ajaxRunningCount_Group != 0) {
+			
+			if (challenge.group.type == 'party') 
+			{	
+				groupId = 'party'
+				fetchPartyData(); 
+			} else
+			{
+				groupId = challenge.group.id
+				//if group id is Tavern or Newbies set group as Tavern OverFlow
+				if (groupId == '00000000-0000-4000-A000-000000000000' || groupId == '5481ccf3-5d2d-48a9-a871-70a7380cee5a') groupId = 'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'
+				fetchGuildData();
+			}
+			
+		}
+		if (ajaxRunningCount + ajaxRunningCount_Group  === 0) { // all ajax calls have finished
+			fetchMemberList();
+		}
+	}		
+	
+	
+	function fetchChallengeTasksSuccess(data) {
+		if (debug) console.log('debug Challenge Task Sucess data start');
+		challengeTasks = data.data;
+		if (debugShowObject) console.log(challengeTasks);
+		
+		//if (debugShowObject) console.log(groups);
+		ajaxRunningCount--; 
+		if (ajaxRunningCount + ajaxRunningCount_Group  === 0) { // all ajax calls have finished
+			fetchMemberList();
+		}
+	}	
+	
+	
+	function fetchGuildData() {
+		if (debug) console.log('debug parseData Guild Data start');
+		
+		$.ajax({
+			url: serverUrl + serverPathGroup + '/' + groupId,
+			type: 'GET',
+			dataType: 'json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+			},
+			success: fetchGuildSuccess,
+			error: fetchFailure  //$$$ Fetch all guild data instead?
+		});
+	}
+		
+	function fetchGuildSuccess(data) {
+		if (debug) console.log('debug Guild Sucess data start');
+		group = data.data;
+		if (debugShowObject) console.log(group);
+		
+		//if (debugShowObject) console.log(groups);
+		ajaxRunningCount_Group--; 
+		if (ajaxRunningCount + ajaxRunningCount_Group  === 0) { // all ajax calls have finished
+			fetchMemberList();
+		}
+	}		
+	
+	function fetchPartyData() {
+		if (debug) console.log('debug parseData Party Data start');
+		
+		$.ajax({
+			url: serverUrl + serverPathParty,
+			type: 'GET',
+			dataType: 'json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+			},
+			success: fetchPartySuccess,
+			error: fetchFailure //$$$ Fetch all guild data instead?
+		});
+	}	
+	
+	function fetchPartySuccess(data) {
+		if (debug) console.log('debug Party Sucess data start');
+		party = data.data;
+		group = party;
+		if (debugShowObject) console.log(party);
+		
+		ajaxRunningCount_Group--; 
+		if (ajaxRunningCount + ajaxRunningCount_Group === 0) { // all ajax calls have finished
+			fetchMemberList();
+		}
+	}	
+	
+	
+	
+	
+	
+		
+	
+	function fetchMemberList() {
+		if (debug) console.log('debug Member List start');
+		$('#loading #statusFetch').text('Asking for Member List (' + memberListToFetch.length + ' so far)');
+		var completeUrl = '';
+		
+		if (lastListMemberId == '') {
+			completeUrl = serverUrl + serverPathChallenge + '/' + challengeId + serverPathGroupMemberPart ;
+		} else {
+			completeUrl = serverUrl + serverPathChallenge + '/' + challengeId + serverPathGroupMemberPart + '?lastId=' + lastListMemberId;
+		}
+		
+
+		if (debugShowObject) console.log(completeUrl);	
+		$.ajax({
+			url: completeUrl,
+			type: 'GET',
+			dataType: 'json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+			},
+			success: fetchMemberListSuccess,
+			error: fetchFailure
+		});
+	}
+
+		
+		
+	function fetchMemberListSuccess(data) {
+		if (debug) console.log('debug Member List Sucess start');
+		memberListToFetch = memberListToFetch.concat(data.data);
+		
+		if (memberListToFetch.length > 0) {
+			if (memberListToFetch[memberListToFetch.length -1]._id == lastListMemberId || memberListToFetch.length == group.memberCount) {
+			//The extra test as sometimes the Member Count is not accurate
+				if (debugShowObject) console.log(memberListToFetch);
+				fetchMembers()		 
+			} else {
+				//Still more members to get
+				lastListMemberId = memberListToFetch[memberListToFetch.length -1]._id;
+				fetchMemberList()
+			}	
+		} else {
+			//No members in group error
+			if (debug) console.log('debug Member List No one in list... WHERE DID EVERYONE GO????');
+		}
+	}	
+		
+		
+	function fetchMembers(){
+
+		if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + lastMemberIndex + ')');
+		
+		if (debugShowObject) console.log(memberListToFetch[lastMemberIndex].id);
+
+		
+		//Do a quick loop so we can check if leader is needed $$$I'm sure there is a better way but it is late
+		memberListToFetch_idOnly = []
+		$.each(memberListToFetch, function(index, obj){
+			memberListToFetch_idOnly.push(obj.id)
+		});
+
+		
+		$.each(memberListToFetch, function(index, obj){
+			$('#loading #statusFetch').text('Asking for Member Data ... (This can take a while)') ;
+			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + obj.id + ')');
+			$.ajax({
+				url: serverUrl + serverPathMemberProfilePart + '/' + obj.id,
+				type: 'GET',
+				dataType: 'json',
+				cache: false,
+				beforeSend: function(xhr){
+						xhr.setRequestHeader('x-api-user', userId);
+						xhr.setRequestHeader('x-api-key',  apiToken);
+				},
+				success: fetchMemberSuccess,
+				error: fetchMemberFail
+			});
+			
+			$.ajax({
+				url: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id,
+				type: 'GET',
+				dataType: 'json',
+				cache: false,
+				beforeSend: function(xhr){
+						xhr.setRequestHeader('x-api-user', userId);
+						xhr.setRequestHeader('x-api-key',  apiToken);
+				},
+				success: fetchMemberChallengeSuccess,
+				error: fetchMemberChallengeFail
+			});
+		});
+	}
+		
+		
+	function fetchMemberFail() {
+	
+		if (debug) console.log('debug Member Fail Fetch for ' + (lastMemberIndex+1))
+		// $$$ Put up error message?????			
+		lastMemberIndex++
+		checkMemberAllFetch()
+	}
+			
+			
+	function fetchMemberSuccess(data) {
+		if (debug) console.log('debug Member Sucess data start ' +  lastMemberIndex + '  id: ' + data.data._id);
+		var friendlyMemberIndex = lastMemberIndex + 1
+		$('#loading #statusFetch').text('Fetching Member '  +  friendlyMemberIndex);
+		
+		members[data.data._id] = data.data;
+
+		lastMemberIndex++
+		checkMemberAllFetch()
+	}	
+	
+	function fetchMemberChallengeFail() {
+		if (debug) console.log('debug Member Challenge Fail Fetch for ' + (lastMemberIndex+1))
+		// $$$ Put up error message?????			
+		
+		lastMemberChallengeIndex++
+		checkMemberAllFetch()
+	}
+			
+			
+	function fetchMemberChallengeSuccess(data) {
+		if (debug) console.log('debug Member Challenge Sucess data start ' +  lastMemberIndex + '  id: ' + data.data._id);
+		var friendlyMemberIndex = lastMemberIndex + 1
+		//$('#loading #statusFetch').text("Fetching Member's Challenge Data "  +  friendlyMemberIndex);  //Not used as it flickers too much
+		membersChallenge[data.data.id] = data.data;
+		
+		lastMemberChallengeIndex++
+		checkMemberAllFetch()
+	}
+	
+	function checkMemberAllFetch() {
+		if ((lastMemberIndex == memberListToFetch.length) && (lastMemberChallengeIndex == memberListToFetch.length)) { // all ajax calls have finished
+			$('#loading #statusFetch').text('Preparing to Display the Data');
+			if (debugShowObject) console.log(members);
+			if (debugShowObject) console.log(membersChallenge);
+			parseData();
+		} 
+	}
+
+}
+
+	
+function parseData() {
+	if (debug) console.log('debug parseData start');
+
+	
+    // variables for storing the content:
+    var MAIN = {}; // each element defines the HTML for one section on the page
+    var TOC  = {}; // each element defines one Table of Contents entry
+    var DASHBOARD = {}; // each element defines the HTML for one dashboard tile
+
+	var fetchtime = myDateConverter(new Date(), 'pretty');
+	
+	
+    collateAndDisplayData(); //This is one function as memberActivty requires both Member and Guild data.
+
+	userDataInHeader();
+	groupDataInHeader();
+
+	
+	//////////////////////////////////////////////////////////////////////
+    ////   Display the HTML that the functions have created   ////////////
+    //////////////////////////////////////////////////////////////////////
+    $('#loading #statusFetch').text('') //All Done
+	$('#loading .good').hide();
+	$('#posting .good').hide(); // just to be sure
+    $('#documentationAndFormClose').show();
+    $('#documentationAndForm').hide();
+	
+	formatAndDisplayDASHBOARD();
+    formatAndDisplayTOC();
+    formatAndDisplayMAIN();
+	
+	function formatAndDisplayDASHBOARD() {
+		// Not required to be changed. Section controlled by Sections defined above.
+		var html = '<ul>';
+		var valueToDisplay = ''
+		
+		$.each(dashboardToDisplay, function(index, obj){
+			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+				var data = obj;
+				
+				var classes = (data.hidden) ? 'hide' : '';
+				html += '<li ';
+				if (data.id) {
+					// id is needed only if other code will change tile background
+					html += 'id="' + data.id + '" ';
+				}
+				html += 'title="' + data.hoverText + '" ';
+				if (data.target) {
+					html += 'data-target="' + data.target +
+							'" data-closemainsections="true" data-forceopen="true" ' +
+							'class="showHideToggle ' + classes + '"';
+				}
+				
+				valueToDisplay = eval(data.value)
+				
+				html += '><div class="' +
+						data.status     + '"><div class="value">' +
+						valueToDisplay      + '</div><div class="label">' +
+						data.label      + '</div></div></li>';
+			}
+		});
+
+
+		html += '</ul><div class="clear"></div>';
+		if (debugShowObject) console.log(html);
+		$('#DASHBOARD').html(html);
+	}
+
+	
+	function formatAndDisplayTOC() {
+		// Not required to be changed. Section controlled by Sections defined above.
+		var keys = []
+		var keyToAdd = ''
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			keyToAdd=''
+			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+				if (obj.type != 'heading'){
+					keyToAdd = obj.id
+				} else {
+					keyToAdd = 'HEADING'  
+					if (obj.title != '') keyToAdd = keyToAdd + ' ' + obj.title
+				}
+				if (keyToAdd != '') keys.push(keyToAdd)
+			}
+		});
+		if (debugShowObject) console.log(keys);
+		
+		var html = '';
+		for (var i=0,ic=keys.length; i<ic; i++) {
+			if (keys[i].match(/^HEADING/)) { // new section in Table of Contents
+				var title = keys[i].replace(/^HEADING/, '');
+				if (html) {
+					html += '</ul></li>'; // close the previous section
+				}
+				html += '<li>' + title + (title ? ':' : '&nbsp;') + '<ul>';
+			}
+			else {
+				var data = TOC[keys[i]];
+				if (! data) {
+					continue;
+				}
+				html += '<li class="showHideToggle" data-target="' +
+						data['target'] + '" data-closemainsections="true">' +
+						data['title']  + '</li>';
+			}
+		}
+		html += '</ul></li></ul>'; // close the final section, and the parent ul
+		$('#TOC').html('<ul id="tableOfContents">' + html +
+					   '</ul><div class="clear"></div><hr class="padded" />');
+	}
+
+
+	function formatAndDisplayMAIN() {
+		// Not required to be changed. Section controlled by Sections defined above.
+		var keys = [];
+		var keyToAdd = ''
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			keyToAdd=''
+			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+				keyToAdd = obj.id
+				if (obj.type == 'heading') keyToAdd = ''
+				if (keyToAdd != '') keys.push(keyToAdd)
+			}
+		});
+		if (debugShowObject) console.log(keys);
+		
+		var html = '';
+		var functions = []; // functions to run after HTML code has been loaded
+		var functionsPar = []; //Par to be passed in Function
+		for (var i=0,ic=keys.length; i<ic; i++) {
+			var data = MAIN[keys[i]];
+			if (! data) {
+				continue;
+			}
+			html += '<div id="' +
+					data.id     + '"><h2>' +
+					data.title  + '</h2>' +
+					data.html   +
+					((data.longContent) ? '<div class="mainSectionClose closer">' +
+										  'close / back to top</div>' : '') +
+					'</div>';
+			if (data['function']) {
+				functions.push(data['function']);
+				functionsPar.push(data['functionPar']);
+			}
+		}
+		$('#MAIN').html(html);
+		// execute any functions that need to be run AFTER the bulk of the
+		// HTML has been created:
+		$.each(functions, function(index,fn){
+			var passPar = functionsPar[index];
+			fn(passPar);
+		});
+		if (sectionOpen && sectionOpen  !=  'documentationAndForm'
+						&& sectionOpen  !=  'versionChanges'
+		) {
+			// reopen the section that the user had open before re-fetching
+			// data (except for sections that don't display the user's own data):
+			$('#' + sectionOpen).show();
+			openRelatedSections();
+		}
+	}
+
+
+	openRelatedSections = function() {
+
+	}
+	
+	function userDataInHeader() {
+		var displayName = user.profile.nameNotPretty //renderFormattedText(user.profile.name);
+		
+		$('#headerExtras').html('<div id="userNameDisplay">' +
+				displayName +
+				'</div>' +
+				'<div id="explanationAndClearLinks">' +
+				'<input id="refetch" type="submit" value="' +
+				'Re-Fetch Data (last fetched ' + fetchtime + ')" />' +
+				'<span id="documentationAndFormToggle" class="showHideToggle" data-target="documentationAndForm" data-linktext="documentation" data-closemainsections="true">show documentation / options</span>' +
+				'</div>'  				
+				
+		);
+		$('#refetch').click(function(event){
+			/* The user clicked on the Re-Fetch My Data button. */
+			fetchData();
+		});
+	}
+	
+	function groupDataInHeader() {
+		var displayChallengeName = challenge.nameNotPretty;
+		var displayLeaderName = challenge.leader.profile.nameNotPretty;
+		var displayGuildName = challenge.group.nameNotPretty;
+		if (challenge.group.name != group.name) displayGuildName += ' (Guild Chat: ' + group.nameNotPretty + ')'
+		
+		$('#headerGroupExtras').html('<div id="challengeNameDisplay">' +
+				displayChallengeName + 
+				'</div>' +
+				'<div id="challengeHeaderDetailDisplay">' + ' Leader: ' + displayLeaderName + '&nbsp;&nbsp;&nbsp;&nbsp;Guild: ' + displayGuildName +
+				'</div>'  
+		);
+	}
+	
+	//////////////////////////////////////////////////////////////////////
+    ////   Formatting Functions used throughout  			  ////////////
+    //////////////////////////////////////////////////////////////////////	
+	
+	function myDateConverter(date, style) { 
+
+		var dateStr = '';
+					
+		if (style === 'pretty') {
+			dateStr = moment(date).format('Do MMM YYYY, H:mm:ss');
+		} else if (style === 'short') {
+			if (date == neverDate) {
+				dateStr = '-N/A-'
+			} else {
+				dateStr = moment(date).format('YYYY-MM-DD H:mm:ss');
+			}
+		} else if (style === 'long') {
+			dateStr = moment(date).format('ddd Do MMMM YYYY, h:mm:ss a');
+		} else if (style === 'utcTime') {
+			dateStr = moment(date).utc().toISOString();
+		} else if (style === 'relativeTime') {
+			if (date == neverDate) {
+				dateStr = '-N/A-'
+			} else {
+				dateStr = moment(date).fromNow();
+			}
+		}	else {
+			var dateStr = moment(date).format(style);
+		}
+		return dateStr;
+	}
+
+	function renderFormattedText(text) {
+		var md = window.habiticaMarkdown;
+		
+		if (exportFormats[exportFormat].convertMarkup) text = md.render(text);
+		if (exportFormats[exportFormat].removeHtml) text = $(text).text();
+		return text;
+	}
+	
+	function toTitleCase(str)
+	{
+		return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+	}
+	
+	function constructTable(passPar) {
+		//Called in Main to display table(s).
+		//Will need to be added to add buttons and row selection on the fly.
+		var formattedTableHeader = [];
+		var dataSetSectionId = passPar[0];
+		var dataSetTable = passPar[1];
+		var dataSetTableHeader = passPar[2];
+		var dataSetTableSection = passPar[3];
+		
+		var defaultShow = []
+		var defaultOrderBy = []
+		var buttonCollectionColumnOption = []
+		var selectValue = false
+		var showButtons = []
+		var allColumnDefs = []
+		
+		var showOptions = []
+		var hideOptions = []
+		
+		if (debug) console.log('debug constructTable ' + dataSetSectionId);		
+		
+		//create column header
+		$.each(dataSetTableHeader, function(index, obj){
+			formattedTableHeader.push({'title': obj, 'classname': dataSetTableSection + '_' + obj.replace(/ /g, ''),  'defaultContent': ''})
+		});
+		
+		if (debugShowObject) console.log(formattedTableHeader);
+		
+		
+		showButtons = formatShowButton()
+		
+		if (debugShowObject) console.log(showButtons);
+
+		allColumnDefs = [
+			{ targets: defaultShow, visible: true},
+			{ targets: '_all', visible: false }
+		]
+		allColumnDefs = allColumnDefs.concat(sectionTables[dataSetSectionId].extraColumnDefs)
+		
+		if (debugShowObject) console.log(allColumnDefs);
+
+		
+		sectionTables[dataSetSectionId].events = $('#events');
+		$(document).ready(function() {
+			sectionTables[dataSetSectionId].table = $('#'+ dataSetTableSection).DataTable( {
+				data: dataSetTable,
+				columns: formattedTableHeader,
+				columnDefs: allColumnDefs,
+				order: defaultOrderBy,
+				lengthMenu: [ [10, 25, 50, 100, 200, 500, -1], [10, 25, 50, 100, 200, 500, "All"] ],
+				select: selectValue, 
+				dom: 'Bfrtip',
+				buttons: showButtons
+				
+			} );
+		} );
+		
+		
+		function formatShowButton() {
+			var returnButtons = []
+		
+		
+			//create export options
+			$.each(exportOptions, function(index, obj){
+				
+				//Work out the hidden column list
+				showOptions[obj.id] = eval('sectionTables[dataSetSectionId].' + obj.id + '.show')
+				hideOptions[obj.id] = [];
+				
+				if (showOptions[obj.id][0] == 'all'){
+					showOptions[obj.id] = []; // clear array
+					for (i = 0; i < sectionTables[dataSetSectionId].dataTable.length; i++) { 
+						showOptions[obj.id].push(i)
+					}
+					
+				} else {
+					for (i = 0; i < sectionTables[dataSetSectionId].dataTable.length; i++) { 
+						if (showOptions[obj.id].indexOf(i) == -1) hideOptions[obj.id].push(i)
+					}
+				}
+				buttonCollectionColumnOption.push({
+									extend: 'colvisGroup',
+									text: obj.shortDesc,
+									show: showOptions[obj.id],
+									hide: hideOptions[obj.id],
+									className: 'columnGroupButton'
+								})					
+			});
+			buttonCollectionColumnOption.push('columnsToggle')
+			defaultShow = showOptions[exportOption]
+			defaultOrderBy = eval('sectionTables[dataSetSectionId].' + exportOption + '.orderBy')
+			
+			if (debugShowObject) console.log(showOptions);		
+			if (debugShowObject) console.log(hideOptions);	
+		
+			returnButtons = [
+				 'pageLength', 
+				 {
+					extend: 'collection',
+					text: 'Show/Hide',
+					buttons: buttonCollectionColumnOption
+				},
+				{
+					text: exportFormats[0].shortDesc,
+					action: function ( e, dt, node, config ) {
+						exportFormat = exportFormats[0].id;
+						parseData();
+					}
+				},
+				{
+					text: exportFormats[1].shortDesc,
+					action: function ( e, dt, node, config ) {
+						exportFormat =  exportFormats[1].id;
+						parseData();
+					}
+				},
+				{
+					text: exportFormats[2].shortDesc,
+					action: function ( e, dt, node, config ) {
+						exportFormat =  exportFormats[2].id;
+						parseData();
+						}
+				},
+				{
+					extend: 'collection',
+					text: 'Print/Copy/Export',
+					buttons: [ 
+						 {
+							extend: 'print',
+							exportOptions: {
+								columns: ':visible'
+							}
+						}, {
+							extend: 'copy',
+							exportOptions: {
+								columns: ':visible'
+							}
+						}, {
+							extend: 'pdf',
+							filename: group.name,
+							exportOptions: {
+								columns: ':visible'
+							}	
+						}, {
+							extend: 'excel',
+							filename: group.name,
+							exportOptions: {
+								columns: ':visible'
+							}	
+						}, {
+							extend: 'csv',
+							filename: group.name,
+							exportOptions: {
+								columns: ':visible'
+							}	
+						}						
+					],
+					autoClose: true
+				}
+			]
+			
+			if (sectionTables[dataSetSectionId].extraButton != undefined) {
+				var extraButton = sectionTables[dataSetSectionId].extraButton();
+				returnButtons = returnButtons.concat(extraButton)
+				selectValue = true
+			}
+			
+			return returnButtons
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	//////////////////////////////////////////////////////////////////////
+    ////   Math Functions  					 ////////////
+    //////////////////////////////////////////////////////////////////////
+	function mean(numbers) {
+	////   by Paul_Wilkins  					 ////////////
+	// mean of [3, 5, 4, 4, 1, 1, 2, 3] is 2.875
+		var total = 0,
+			i;
+		for (i = 0; i < numbers.length; i += 1) {
+			total += numbers[i];
+		}
+		return total / numbers.length;
+	}
+	function median(numbers) {
+	////   based on code by Paul_Wilkins  					 ////////////
+		// median of [3, 5, 4, 4, 1, 1, 2, 3] = 3
+		var median = 0,
+			numsLen = numbers.length;
+		numbers.sort(function(a, b){return a - b});
+		if (numsLen % 2 === 0) { // is even
+			// average of two middle numbers
+			median = (numbers[numsLen / 2 - 1] + numbers[numsLen / 2]) / 2;
+		} else { // is odd
+			// middle number only
+			median = numbers[(numsLen - 1) / 2];
+		}
+		return median;
+	}
+	function mode(numbers) {
+	////   by Daniel http://danielpike.me.uk/finding-mode-element-in-an-array/ 					 ////////////
+
+	    var mode = {};
+		var max = 0, count = 0;
+
+		numbers.forEach(function(e) {
+			if (mode[e]) { mode[e]++; }
+			else { mode[e] = 1; } 
+
+			if (count<mode[e]) { 
+				max = e;
+				count = mode[e];
+			}
+		});
+		
+		return max;
+	}
+	
+	function range(numbers) {
+		numbers.sort(function(a, b){return a - b});
+		return (String(numbers[0]) + ' to ' + String(numbers[numbers.length - 1]))
+	}
+	
+	function smallest(numbers) {
+		numbers.sort(function(a, b){return a - b});
+		return (numbers[0])
+	}
+	
+	function largest(numbers) {
+		numbers.sort(function(a, b){return a - b});
+		return (numbers[numbers.length - 1])
+	}
+
+	
+	
+	//////////////////////////////////////////////////////////////////////
+    ////   Collate and Display Data  					 ////////////
+    //////////////////////////////////////////////////////////////////////
+	function collateAndDisplayData() {
+	
+	
+		//format collate Data -- one function
+		formatAllDataAndCollate();
+		
+		//run functions to create for TOC / MAIN 
+		$.each(sectionsToDisplay, function(index, obj){
+			if (obj.type == 'sectionTable') {
+				if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+					formatTableSection(obj.id, obj.title)
+				}
+			} else if (obj.type == 'sectionCustom') {
+				var fn = obj.functionCreate
+				eval(fn + '("' + obj.id + '", "' + obj.title + '")')
+			}
+		});
+		
+		
+		
+	//////////////////////////////////////////////////////////////////////
+    ////   Prep data before using                            ////////////
+	//
+	//     This is where you modify data to be used throughout
+	//     All data is modified here
+    //////////////////////////////////////////////////////////////////////
+		
+		function formatAllDataAndCollate() {
+		
+			var arrayToAdd = []; //Used to create final array to add to dataSet
+			var tempMembersList = []; //For looping through each members and adding missing variables
+			var tempQuestsList = []; //For looping through each quests and adding missing variables
+			var questRewardItem = {}; //For collating
+			var doubleQuotes = '"' //This is to make my life easier... Maybe make it a global constant?
+			
+			//To complete chat stats
+			var lastEphochTime = 0
+			var lastEphochTime_system = 0			
+			var lastEphochTime_notSystem = 0			
+				
+			//arrays to construct stuff because I like altering things in one place than trailing through code... (Didn't do too well with this section).	
+			var attributeArrayToConstruct = ['str', 'int', 'per', 'con']
+			
+			var gearArrayToConstruct = ['armor', 'back', 'body', 'eyewear', 'head', 'headAccessory', 'shield', 'weapon']
+			
+			///////////////////////////////////////////////////////////////
+			////   Single   Data                              ////////////
+			//////////////////////////////////////////////////////////////
+			if (debug) console.log('debug formatAllDataAndCollate Single Data Variables');
+			
+			
+			//User
+			user.profile.nameNotPretty = user.profile.name
+			user.profile.namePretty = renderFormattedText(user.profile.name)
+
+			//challenge
+			challenge.nameNotPretty = challenge.name
+			challenge.namePretty = renderFormattedText(challenge.name)
+			challenge.leader.profile.nameNotPretty = challenge.leader.profile.name
+			challenge.leader.profile.namePretty = renderFormattedText(challenge.leader.profile.name)
+			challenge.group.nameNotPretty = challenge.group.name
+			challenge.group.namePretty = renderFormattedText(challenge.group.name)
+			
+			//Group
+			group.nameNotPretty = group.name //render later without html tags?
+			group.namePretty = renderFormattedText(group.name)
+			group.leader.profile.nameNotPretty = group.leader.profile.name //render later without html tags?
+			group.leader.profile.namePretty = renderFormattedText(group.leader.profile.name)
+			group.memberTotals = {}
+			group.memberTotals.fetchCount = 0 //to populate later
+			group.memberTotals.inInn = 0 //to populate later
+			group.memberTotals.activeLess12Hr = 0 //to populate later
+			group.memberTotals.activeLess24Hr = 0 //to populate later
+			group.memberTotals.activeLessWeek = 0 //to populate later
+			group.memberTotals.activeLessMonth = 0 //to populate later
+			//if (groupId == 'party')	group.quest.memberCount = 0 //to populate later
+			group.memberTotals.inInn_activeLess12Hr = 0 //to populate later
+			group.memberTotals.inInn_activeLess24Hr = 0 //to populate later
+			group.memberTotals.inInn_activeLessWeek = 0 //to populate later
+			group.memberTotals.inInn_activeLessMonth = 0 //to populate later
+			//if (groupId == 'party')	group.quest.inInn_memberCount = 0 //to populate later
+			group.memberTotals.class = {}
+			group.memberTotals.class.warrior = 0 //to populate later
+			group.memberTotals.class.mage = 0 //to populate later
+			group.memberTotals.class.rogue = 0 //to populate later
+			group.memberTotals.class.healer = 0 //to populate later
+			group.memberTotals.underLevel10 = 0 //to populate later
+			group.chatTotals = {}
+			group.chatTotals.count_notSystem = 0 //to populate later
+			group.chatTotals.count_system = 0 //to populate later
+			group.chatTotals.timePeriod = []
+			group.chatTotals.timePeriod_notSystem = []
+			group.chatTotals.timePeriod_system = []
+			
+			
+			
+			///////////////////////////////////////////////////////////////
+			////   Process Sections / Table / Count Values     ////////////
+			//////////////////////////////////////////////////////////////
+			if (debug) console.log('debug formatAllDataAndCollate Secion/tableData');
+			
+			//Clear arrays
+			$.each(sectionsToDisplay, function(index, obj){
+				if (obj.type == 'sectionTable'){
+					sectionTables[obj.id].dataSet=[];
+				}
+			});
+			
+			
+			
+			//chat data format and collate
+			if (debugShowObject) console.log(sectionTables);
+			
+			
+			
+			///////////////////////////////////////////////////////////////
+			////   Chat Section                                ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(group.chat, function(index, obj){
+				
+				modifyChatProperties(obj);
+								
+				//Add in participation dates
+				//assuming travelling from last to earliest
+				if (members[obj.uuid]  !=  undefined) {
+					if (members[obj.uuid].lastChat == undefined) {
+						members[obj.uuid].lastChat = {}
+						members[obj.uuid].lastChat.text = obj.text
+						members[obj.uuid].lastChat.textPretty = obj.textPretty
+						members[obj.uuid].lastChat.occured = obj.creation
+						members[obj.uuid].lastChat.totalLines = 1
+					} else { 
+						members[obj.uuid].lastChat.totalLines++
+					}
+				}
+				
+				
+				
+				//Date Times, counts etc
+				if (lastEphochTime != 0) group.chatTotals.timePeriod.push(lastEphochTime-obj.timestamp);
+				lastEphochTime = obj.timestamp
+				
+				if (obj.uuid != 'system') 
+				{	
+					group.chatTotals.count_notSystem++
+					
+					if (lastEphochTime_notSystem != 0) group.chatTotals.timePeriod_notSystem.push(lastEphochTime_notSystem-obj.timestamp);
+					lastEphochTime_notSystem = obj.timestamp
+
+				} else {
+					group.chatTotals.count_system++
+					
+					if (lastEphochTime_system != 0) group.chatTotals.timePeriod_system.push(lastEphochTime_system-obj.timestamp);
+					lastEphochTime_system = obj.timestamp
+				}
+				
+				if (group.chatTotals.firstChat != undefined){
+					if (moment(obj.creation.utcTime).isBefore(group.chatTotals.firstChat.utcTime)) group.chatTotals.firstChat = obj.creation
+				} else {
+					group.chatTotals.firstChat = obj.creation
+				}
+				if (group.chatTotals.lastChat != undefined){
+					if (moment(obj.creation.utcTime).isAfter(group.chatTotals.lastChat.utcTime)) group.chatTotals.lastChat = obj.creation
+				} else {
+					group.chatTotals.lastChat = obj.creation
+				}
+				
+				
+				
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly != 'party' || groupId == 'party')){
+						if (sectionTables[obj2.id].type == 'chat'){
+							arrayToAdd = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								arrayToAdd.push(eval('obj.' + obj3))
+							});
+							//Don't include system messages if chatNotSystemExport
+							if (obj.uuid != 'system' || obj2.id != 'chatNotSystemExport') sectionTables[obj2.id].dataSet.push(arrayToAdd); 
+						}
+						
+					}
+				});
+			}); 
+			if (debug) console.log('Finish collating chatExportSet');
+
+			
+
+			
+			
+			///////////////////////////////////////////////////////////////
+			////   Member First Process  (not add)           ////////////
+			//////////////////////////////////////////////////////////////
+			//Create simple array to pop from (not a named Array)
+			$.each(memberListToFetch, function(index, obj){
+				modifyUserProperties(members[obj.id]);
+			
+				group.memberTotals.fetchCount++
+				
+				//Merge in Challenge Data?
+				
+			
+				//Add in missing variables
+				if (members[obj.id].lastChat == undefined) {
+					members[obj.id].lastChat = {}
+					members[obj.id].lastChat.text = ''
+					members[obj.id].lastChat.textPretty = ''
+					members[obj.id].lastChat.occured = reformatDate(neverDate)
+					members[obj.id].lastChat.totalLines = 0
+				}
+				
+				//Attribute Calculates
+				members[obj.id].attributeTotals = {}
+				$.each(attributeArrayToConstruct, function (index2, obj2){
+					members[obj.id].attributeTotals[obj2] = {};
+					members[obj.id].attributeTotals[obj2].lvl = Math.floor(members[obj.id].stats.lvl / 2);
+					members[obj.id].attributeTotals[obj2].buff = members[obj.id].stats.buffs[obj2]
+					members[obj.id].attributeTotals[obj2].allocated = members[obj.id].stats[obj2]
+					members[obj.id].attributeTotals[obj2].gear = 0
+					members[obj.id].attributeTotals[obj2].gearBuff = 0
+					$.each(gearArrayToConstruct, function (index3, obj3){
+						if (members[obj.id].items.gear.equipped[obj3] != undefined) {
+							var gearKey = members[obj.id].items.gear.equipped[obj3]
+							if (content.gear.flat[gearKey] != undefined) {
+								members[obj.id].attributeTotals[obj2].gear += content.gear.flat[gearKey][obj2]
+								if (content.gear.flat[gearKey].klass == members[obj.id].stats.class) members[obj.id].attributeTotals[obj2].gearBuff += content.gear.flat[gearKey][obj2] / 2
+							}
+						}
+					});
+					members[obj.id].attributeTotals[obj2].total = members[obj.id].attributeTotals[obj2].lvl + members[obj.id].attributeTotals[obj2].buff + members[obj.id].attributeTotals[obj2].allocated + members[obj.id].attributeTotals[obj2].gear + members[obj.id].attributeTotals[obj2].gearBuff
+				});
+				
+
+				//Determine Activity
+				if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastDropItem.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastDropItem
+				} else if (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastLoggedIn.utcTime){
+					members[obj.id].lastActive = members[obj.id].lastLoggedIn
+				} else {
+					members[obj.id].lastActive = members[obj.id].lastChat.occured
+					}
+				
+				if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess12Hr++
+				if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess24Hr++
+				if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessWeek++
+				if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessMonth++
+				
+				if (members[obj.id].preferences.sleep == true){
+					group.memberTotals.inInn++
+
+					if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess12Hr++
+					if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess24Hr++
+					if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessWeek++
+					if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessMonth++
+				}
+
+				//Class Stats
+				group.memberTotals.class[members[obj.id].stats.classPretty]++
+				if (members[obj.id].stats.lvl < 11) group.memberTotals.underLevel10++
+				
+				
+								
+				tempMembersList.push(members[obj.id])
+			}); 
+			if (debugShowObject) console.log(tempMembersList);
+			
+			//Member data format and collate
+			
+			///////////////////////////////////////////////////////////////
+			////   members final loop  process no calcs    ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(tempMembersList, function(index, obj){			
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly != 'party' || groupId == 'party')){
+						if (sectionTables[obj2.id].type == 'member'){
+							arrayToAdd = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								arrayToAdd.push(eval('obj.' + obj3))
+							});
+							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(arrayToAdd);
+						}
+					}
+				});
+			}); 
+			if (debug) console.log('Finish collating memberListSet');
+			
+			
+			if (debugShowObject) console.log(sectionTables);
+		};
+		
+		//////////////////////////////////////////////////////////////////////
+		////   Formatting data for data sets     ///////////////////////////
+		//////////////////////////////////////////////////////////////////////
+	    function modifyChatProperties(obj) {
+			obj.textPretty  = renderFormattedText(obj.text);
+			if (obj.uuid == 'system') {
+				obj.userPretty = 'System'
+			} else {
+				obj.userPretty = obj.user//renderFormattedText(obj.user);
+			}
+			obj.creation  = reformatDate(obj.timestamp);
+			//if (debugShowObject) console.log(obj);
+			if (obj.contributor  !=  undefined ) {
+				if (obj.contributor.text  !=  undefined ) {
+					obj.contribPretty = [];
+					obj.contribPretty.text = obj.contributor.text;
+					if (obj.contributor.level != undefined)	{
+						obj.contribPretty.level = obj.contributor.level
+					} else {
+						obj.contribPretty.level = '';
+					};
+					if (obj.contributor.contributions  !=  undefined){
+						obj.contribPretty.contributions = obj.contributor.contributions;
+					} else {
+						obj.contribPretty.contributions = '';
+					}
+					if (obj.contributor.admin === true) {
+						obj.contribPretty.admin = true
+					} else {
+						obj.contribPretty.admin  = false
+					}
+				} else {
+					obj.contribPretty = [];
+					obj.contribPretty.text = '';
+					obj.contribPretty.level = '';
+					obj.contribPretty.contributions = '';
+					obj.contribPretty.admin = false;
+				}
+			} else {
+				obj.contribPretty = [];
+				obj.contribPretty.text = '';
+				obj.contribPretty.level = '';
+				obj.contribPretty.contributions = '';
+				obj.contribPretty.admin = false;
+			}
+		}
+		
+		function modifyUserProperties(obj) {
+			if (obj.profile !=  undefined ){
+				if (obj.profile.blurb  !=  undefined ) {
+					obj.blurbPretty  = renderFormattedText(obj.profile.blurb)
+				} else
+				{
+					obj.blurbPretty  = ''
+				}
+			} else
+			{
+				obj.blurbPretty  = ''
+			};
+			if (obj.id == 'system') {
+				obj.profile.namePretty = 'System'
+			} else {
+				obj.profile.namePretty = obj.profile.name //renderFormattedText(obj.profile.name);
+			}
+			if (obj.stats.class == 'wizard')  {
+				obj.stats.classPretty = 'mage'
+			} else {
+				obj.stats.classPretty = obj.stats.class
+			}
+			obj.inbox.canPM = !obj.inbox.optOut;
+			obj.creation  = reformatDate(obj.auth.timestamps.created);
+			obj.lastLoggedIn  = reformatDate(obj.auth.timestamps.loggedin);
+			obj.lastDropItem  = reformatDate(obj.items.lastDrop.date);
+			//if (debugShowObject) console.log(obj);
+			if (obj.contributor  !=  undefined ) {
+				if (obj.contributor.text  !=  undefined ) {
+					obj.contribPretty = [];
+					obj.contribPretty.text = obj.contributor.text;
+					if (obj.contributor.level != undefined)	{
+						obj.contribPretty.level = obj.contributor.level
+					} else {
+						obj.contribPretty.level = '';
+					};
+					if (obj.contributor.contributions  !=  undefined){
+						obj.contribPretty.contributions = obj.contributor.contributions;
+					} else {
+						obj.contribPretty.contributions = '';
+					}
+					if (obj.contributor.admin === true) {
+						obj.contribPretty.admin = true
+					} else {
+						obj.contribPretty.admin  = false
+					}
+				} else {
+					obj.contribPretty = [];
+					obj.contribPretty.text = '';
+					obj.contribPretty.level = '';
+					obj.contribPretty.contributions = '';
+					obj.contribPretty.admin = false;
+				}
+			} else {
+				obj.contribPretty = [];
+				obj.contribPretty.text = '';
+				obj.contribPretty.level = '';
+				obj.contribPretty.contributions = '';
+				obj.contribPretty.admin = false;
+			}
+			
+			//Round to 2 decimal places
+			obj.stats.hpPretty = Math.round( obj.stats.hp * 100)/100;
+			obj.stats.mpPretty = Math.round( obj.stats.mp * 100)/100;
+			obj.stats.maxMPPretty = Math.round( obj.stats.maxMP * 100)/100;
+			obj.stats.gpPretty = Math.round( obj.stats.gp * 100)/100;
+			obj.stats.expPretty = Math.round( obj.stats.exp * 100)/100; 
+			obj.stats.toNextLevelPretty = Math.round( obj.stats.toNextLevel * 100)/100;
+			obj.stats.percentageMP = Math.round((obj.stats.mp / (obj.stats.maxMP) * 100) * 100)/100;
+		}
+		
+		function reformatDate(dateString) {
+				var formattedDate = myDateConverter(dateString, 'long');
+				var shortDate     = myDateConverter(dateString, 'short');
+				var relativeTime  = myDateConverter(dateString, 'relativeTime');
+				var utcTime  = myDateConverter(dateString, 'utcTime');
+				return { 'dateAndTime': formattedDate,
+						 'shortDate': shortDate,
+						 'relativeTime': relativeTime,
+						 'utcTime': utcTime
+				};
+		}
+		
+		
+		//////////////////////////////////////////////////////////////////////
+		////   Sections 										   ////////////
+		//////////////////////////////////////////////////////////////////////
+		//Custom Section functions here.
+		function formatOverviewSection(sectionId, title){
+			var html = ''
+			
+			if (challenge.description != undefined) html += '<h3>Description</h3><p>' + renderFormattedText(challenge.description) + '</p>'
+			
+			html += '<h3>Member Breakdown</h3><p>Challenge Partipants: ' +  group.memberTotals.fetchCount + '&nbsp;&nbsp;Total '
+			if (groupId == 'party') {
+				html +=  'Party' 
+			} else {
+				html += 'Guild'
+			}
+			html += ' Members: ' + group.memberCount + '</p>'
+			html += '<p><table class=overview_classBreakdown>' + 
+						'<tr><th>Warrior</th><th>Mage</th><th>Rogue</th><th>Healer</th></tr>' + 
+						'<tr><td>' + group.memberTotals.class.warrior + '</td><td>' + group.memberTotals.class.mage + '</td><td>' + group.memberTotals.class.rogue + '</td><td>' + group.memberTotals.class.healer + '</td></tr>' +
+						'</table> ' + 
+						'There are ' + group.memberTotals.underLevel10 + ' members under level 10 who might not have chosen their class yet.</p>'
+			
+			html += '<p><table class=overview_memberActivity>' + 
+						'<tr><th></th><th>Active < 12 hr</th><th>Active 12 hr < 24 hr</th><th>Active 24 hr < 1 wk</th><th>Active 1 wk < 1 mth</th><th>Active > 1 month</th></tr>' +
+						'<tr><th>Overall</th><td>' + group.memberTotals.activeLess12Hr + '</td><td>' + (group.memberTotals.activeLess24Hr - group.memberTotals.activeLess12Hr) + '</td><td>' + (group.memberTotals.activeLessWeek - group.memberTotals.activeLess24Hr) + '</td><td>' + (group.memberTotals.activeLessMonth - group.memberTotals.activeLessWeek) + '</td><td>' + (group.memberTotals.fetchCount - group.memberTotals.activeLessMonth) + '</td></tr>' +
+						'<tr><th>Active</th><td>' + (group.memberTotals.activeLess12Hr - group.memberTotals.inInn_activeLess12Hr) + '</td><td>' + (group.memberTotals.activeLess24Hr - group.memberTotals.activeLess12Hr - (group.memberTotals.inInn_activeLess24Hr - group.memberTotals.inInn_activeLess12Hr)) + '</td><td>' + (group.memberTotals.activeLessWeek - group.memberTotals.activeLess24Hr - (group.memberTotals.inInn_activeLessWeek - group.memberTotals.inInn_activeLess24Hr)) + '</td><td>' + (group.memberTotals.activeLessMonth - group.memberTotals.activeLessWeek - (group.memberTotals.inInn_activeLessMonth - group.memberTotals.inInn_activeLessWeek)) + '</td><td>' + (group.memberTotals.fetchCount - group.memberTotals.activeLessMonth - (group.memberTotals.inInn - group.memberTotals.inInn_activeLessMonth)) + '</td></tr>' +
+						'<tr><th>In Inn</th><td>' + group.memberTotals.inInn_activeLess12Hr + '</td><td>' + (group.memberTotals.inInn_activeLess24Hr - group.memberTotals.inInn_activeLess12Hr) + '</td><td>' + (group.memberTotals.inInn_activeLessWeek - group.memberTotals.inInn_activeLess24Hr) + '</td><td>' + (group.memberTotals.inInn_activeLessMonth - group.memberTotals.inInn_activeLessWeek) + '</td><td>' + (group.memberTotals.inInn - group.memberTotals.inInn_activeLessMonth) + '</td></tr>' +
+					'</table></p> ' 
+			html += '<hr></hr>'
+
+			
+			//Description
+			html += '<h3>'
+			if (groupId == 'party') {
+				html +=  'Party' 
+			} else {
+				html += 'Guild'
+			}
+			html += ': ' + group.nameNotPretty
+			if (challenge.group.name != group.name) html += ' (Located : ' + challenge.group.nameNotPretty + ')' 
+			html += '</h3><p>' 
+			if (group.logo != undefined && group.logo != '') html += '<img src="' + group.logo + '" align=right></img>'
+			if (group.description != undefined) html += '<h3>Description</h3><p>' + renderFormattedText(group.description) + '</p>'
+			if (group.leaderMessage != undefined) html += '<h3>Leader Note</h3><p>' + renderFormattedText(group.leaderMessage) + '</p>'
+			html += '<h3>Leader</h3><p>' + group.leader.profile.namePretty //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
+			html += '<hr></hr>'
+			
+			
+			//Chat
+			html += '<h3>Chat Breakdown</h3>'
+			if (group.chat.length > 0) {
+				var chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
+				var displayTimePeriod = []
+				var displayTimePeriod_notSystem = []
+				var displayTimePeriod_system = []
+				if (chatDayPeriod < 5){
+					//set time into minutes
+					timeDivision = (60 * 1000)
+					timeDivisonName = ' min'
+				} else if (chatDayPeriod < 20) {
+					//set time into hours
+					timeDivision = (60 * 60 * 100)
+					timeDivisonName = ' hr'
+				} else {
+					//set time into days
+					timeDivision = (60 * 60 * 24 * 1000)
+					timeDivisonName = ' day'
+				}
+				//update arrays
+				$.each(group.chatTotals.timePeriod, function(index, obj){
+					displayTimePeriod.push(Math.round(obj / timeDivision))
+				});
+				$.each(group.chatTotals.timePeriod_notSystem, function(index, obj){
+					displayTimePeriod_notSystem.push(Math.round(obj / timeDivision))
+				});
+				$.each(group.chatTotals.timePeriod_system, function(index, obj){
+					displayTimePeriod_system.push(Math.round(obj / timeDivision))
+				});
+				
+				if (debugShowObject) console.log(displayTimePeriod)
+				
+				html += '<p>Chat period: ' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + chatDayPeriod + ' days)</p>'
+				html += '<p><table class=overview_chatActivity><caption>Chat anaylsis of time between messages</caption>' + 
+						'<tr><th></th><th>No Of Lines</th><th>Mean</th><th>Median</th><th>Mode</th><th>Min Time Diff</th><th>Max Time Diff</th></tr>' 
+				if (displayTimePeriod.length > 0) {		
+					html += '<tr><th>Overall</th><td>' + group.chat.length + '</td><td>' + (Math.round(mean(displayTimePeriod)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(median(displayTimePeriod)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(mode(displayTimePeriod)*100)/100) + timeDivisonName + '</td><td>' + smallest(displayTimePeriod) + timeDivisonName + '</td><td>' + largest(displayTimePeriod) + timeDivisonName + '</td>' 
+				} else {
+						html += '<tr><th>Overall</th><td>' + group.chat.length + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td>' 
+				}
+				if (groupId == 'party') {
+					if (displayTimePeriod_notSystem.length > 0) {
+						html += '<tr><th>Member</th><td>' + group.chatTotals.count_notSystem + '</td><td>' + (Math.round(mean(displayTimePeriod_notSystem)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(median(displayTimePeriod_notSystem)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(mode(displayTimePeriod_notSystem)*100)/100) + timeDivisonName + '</td><td>' + smallest(displayTimePeriod_notSystem) + timeDivisonName + '</td><td>' + largest(displayTimePeriod_notSystem) + timeDivisonName +  '</td>' 
+					} else {
+						html += '<tr><th>Member</th><td>' + group.chatTotals.count_notSystem + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td>' 
+					}
+					if (displayTimePeriod_system.length > 0) {
+						html += '<tr><th>System</th><td>' + group.chatTotals.count_system + '</td><td>' + (Math.round(mean(displayTimePeriod_system)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(median(displayTimePeriod_system)*100)/100) + timeDivisonName + '</td><td>' + (Math.round(mode(displayTimePeriod_system)*100)/100) + timeDivisonName + '</td><td>' + smallest(displayTimePeriod_system) + timeDivisonName + '</td><td>' + largest(displayTimePeriod_system) + timeDivisonName +  '</td>' 
+					} else {
+						html += '<tr><th>System</th><td>' + group.chatTotals.count_system + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td><td>' + '-N/A-' + '</td>' 
+					}
+				}
+				html += '</table></p> '
+			} else
+			{
+				html +=  '<p>It appears a vow of silence has been taken, as there is no chat to report on.</p>'
+			}
+			
+			
+
+			
+			
+			
+			//Finally just return the data!
+			if (! html) {
+				return;
+			}
+			var id    = sectionId + 'Section';
+			var orderId = sectionId;
+					
+			TOC[orderId] = {'target': id, 'title':  title};
+			MAIN[orderId] = {'id': id, 'title': title, 'longContent': true,
+				'html': html};
+		}
+
+		//////////////////////////////////////////////////////////////////////
+		//sectionTable Functions
+		//////////////////////////////////////////////////////////////////////
+		function formatTableSection(sectionId, title){
+			var id    = sectionId + 'Section';
+			var orderId = sectionId;
+			var tableSectionId = sectionId + 'display';
+			var subTitle = sectionTables[sectionId].subTitle()
+			var html = formatTableData(subTitle, tableSectionId);
+			if (! html) {
+				return;
+			}
+			TOC[orderId] = {'target': id, 'title':  title};
+			MAIN[orderId] = {'id': id, 'title': title, 'longContent': true,
+				'html': html, 'dataSetTblSection': tableSectionId, 'function': constructTable, 'functionPar':  [sectionId, sectionTables[sectionId].dataSet, sectionTables[sectionId].dataSetHeader, tableSectionId]};
+		}
+		
+		
+		//Function used by sections to create HTML To display table
+		function formatTableData(subText, tableId) {
+			//Used by sections above if a table is required in there HTML
+			var html = '';
+			
+			html += '<table id="' + tableId + '" class="display" width="100%"></table>'
+
+			if (html) {
+				return subText + '<p><div id="headerExport"></div></p>' + html ;
+			}
+			else {
+				return '';
+			}
+		}
+
+
+	}
+	
+}
+
+
+	
+
+	
+if (debug) console.log('debug 99');	
+});
+</script>	
+
+
+<style>
+
+/*********************************************************************
+****   Page-wide   ***************************************************
+*********************************************************************/
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    background-color: rgb(173, 208, 215);
+}
+
+
+
+#innerBody {
+    margin: 20px;
+    padding: 5px 20px 30px 20px;
+    background-color: rgb(242, 242, 230);
+}
+#loading {
+    margin-right: 30px;
+    margin-left: 30px;
+    color: orange;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+#loading ul {
+    font-size: 0.8em;
+}
+#loading ul a {
+    color: orange;
+}
+
+
+#posting {
+    margin-right: 30px;
+    margin-left: 30px;
+    color: orange;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+#posting ul {
+    font-size: 0.8em;
+}
+#posting ul a {
+    color: orange;
+}
+
+.narrowContent {      /* The data should be as wide as the user's window   */
+    max-width: 500px; /* but some explanatory paragraphs should be narrow. */
+}
+
+
+hr {
+    width: 95%;
+}
+hr.padded {
+    margin-top:    1em;
+    margin-bottom: 2em;
+}
+
+.show {
+    display: block;
+}
+.hide {
+    display: none;
+}
+.clear {
+    clear: both;
+}
+
+.subheading {
+    font-weight: bold;
+}
+.highlight {
+    font-weight: bold;
+}
+.lowlight { /* like highlight but less so */
+    font-style: italic;
+}
+.explanation {
+    font-style: italic;
+}
+abbr {
+    border-bottom: 1px dashed black;
+}
+img.emoji {
+    margin-bottom: -0.25em;
+}
+.forCopyPaste {
+    /* used to add blank lines that we want when copying text to clipboard,
+       but we don't want to see extra whitespace on the screen */
+    margin-top: -1em;
+}
+ul.padded > li {
+    padding: 3px 0;
+}
+
+.neutral {
+    background-color: #fffbd0; /* yellow */
+}
+.danger {
+    background-color: #ffcccc; /* red */
+    /* background-color: #F5A9A9; */ /* darker red */
+}
+.safe {
+    background-color: #bdd8fc; /* blue */
+    /* green+red and green+yellow are not good for colour-blind people */
+}
+
+
+/*********************************************************************
+****   Page-wide Data Tables   ********************************
+*********************************************************************/
+
+
+a.dt-button.columnGroupButton {
+	color: orange;
+}
+ 
+a.dt-button.tranformButton {
+	color: orange;
+}
+
+a.dt-button.removeUserButton {
+	color: orange;
+}
+
+a.dt-button.changeLeaderButton {
+	color: orange;
+}
+
+
+
+/*********************************************************************
+****   Page-wide Show/Hide Toggling   ********************************
+*********************************************************************/
+.mainSectionClose,
+.showHideToggle,     /* for toggling by id */
+.showHideToggleClass /* for toggling by class */
+{
+    cursor: pointer;
+    text-decoration: underline;
+    color: purple;
+}
+.closer { /* as in "a thing that closes", not "nearer" */
+    margin-top: 30px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+.closer:hover {
+    border: 1px dashed lightgrey;
+}
+.developerData {
+    font-family: monospace;
+}
+
+
+/*********************************************************************
+****   Header   ******************************************************
+*********************************************************************/
+h1 {
+    float: left;
+}
+h1>a:first-child { /* "Habitica" link in header */
+    color: black;
+    text-decoration: none;
+}
+h1>a:first-child:hover { /* "Habitica" link in header */
+    text-decoration: underline;
+}
+h1 span {
+    font-size: 0.5em;
+}
+h2 {
+    margin-top: 30px;
+}
+
+#headerExtras .showHideToggle {
+    white-space: nowrap;
+}
+#userNameDisplay {
+    text-align: right;
+    font-weight: bold;
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+#challengeNameDisplay {
+    text-align: left;
+    font-weight: bold;
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+#explanationAndClearLinks {
+    text-align: right;
+}
+#explanationAndClearLinks span {
+    padding-left: 10px;
+}
+
+
+/*********************************************************************
+****   Version History   *********************************************
+*********************************************************************/
+
+#versionChanges dl {
+    margin-left: 30px;
+}
+#versionChanges dl dt {
+    font-size: 1.15em;
+    font-weight: bold;
+}
+#versionChanges dl dt .date {
+    padding-left: 10px;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+#versionChanges .showHideToggle {
+    padding-bottom: 15px;
+    margin-bottom: 10px;
+}
+
+/*********************************************************************
+****   API Form and Documentation   **********************************
+*********************************************************************/
+
+#documentationAndForm > div {
+    max-width: 700px;
+}
+#documentationAndForm #documentationAndFormClose {
+    display: none;
+    max-width: 100%;
+}
+#documentationAndForm div h2 {
+    font-size: 1.3em;
+}
+#documentationAndForm li {
+    margin-bottom: 10px;
+}
+
+#userApiDetailsForm {
+    margin: 30px;
+}
+#userApiDetailsForm fieldset {
+    max-width: 40em;
+}
+#userApiDetailsForm fieldset label,
+#userApiDetailsForm fieldset input[type="submit"] {
+    display: block;
+    float: left;
+    clear: left;
+    margin: 10px 0;
+}
+#userApiDetailsForm fieldset label span {
+    display: block;
+    float: left;
+    width: 8em;
+}
+#userApiDetailsForm fieldset label input {
+    float: left;
+    width: 30em;
+}
+#userApiDetailsForm fieldset p {
+    clear: both;
+}
+#userApiDetailsForm legend .highlight {
+    font-size: 1.3em;
+}
+#userApiDetailsForm fieldset li {
+    margin-bottom: 7px;
+}
+
+
+
+/*********************************************************************
+****   Dashboard   ***************************************************
+*********************************************************************/
+#DASHBOARD ul {
+    float: left;
+}
+#DASHBOARD li {
+    text-align: center;
+    width: 120px;
+    background-color: #fffbd0; /* yellow */
+    border: 1px;
+    padding: 4px;
+    margin-right: 4px;
+    float: left;
+    list-style-type: none;
+}
+#DASHBOARD li.showHideToggle {
+    text-decoration: none;
+    color: black;
+}
+#DASHBOARD li > div {
+    box-shadow: 1px 1px 1px 1px #666666;
+}
+#DASHBOARD .value {
+    font-size: 2.15em;
+    font-weight: bold;
+    padding: 2px;
+}
+#DASHBOARD .label {
+    font-size: 0.75em;
+    padding: 1px;
+}
+#DASHBOARD .dropCap {
+    font-size: 0.7em;
+}
+
+
+/*********************************************************************
+****   Table Of Contents   *******************************************
+*********************************************************************/
+ul#tableOfContents {
+    list-style-type: none;
+}
+ul#tableOfContents ul {
+    list-style-type: none;
+    margin-left: 1em;
+    padding: 0;
+}
+ul#tableOfContents li {
+    font-size: 1.1em;
+    padding: 2px 0;
+}
+ul#tableOfContents > li {
+    float: left;
+    margin-right: 20px;
+}
+
+
+/*********************************************************************
+****   Specific Sections   *******************************************
+*********************************************************************/
+#MAIN > * {
+    display: none; // all sections hidden by default
+}
+
+
+#overviewSection table tr td {
+    border: 2px solid lightgrey;
+	text-align: center;
+	padding: 5px;
+}
+</style>
+</head>
+<body><div id="innerBody">	
+<h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.1)</span></h1><!-- VERSION TOGGLE -->
+<div id="headerExtras"></div>
+<hr class="clear" />
+<div id="headerGroupExtras"></div>
+<hr class="clear" />
+
+
+<div id="loading">
+    <div class="good hide">
+        <p>Please wait. Fetching data from
+        <span id="serverName">Habitica</span>... <span id="statusFetch"></span></p>
+    </div>
+    <div class="bad hide">
+        <p>There was an error obtaining your data.</p>
+        <ul class="padded">
+			<li>Check your challenge id is a Challenge Id which is a string of characters similar to your UID. The Challenge ID appears at the end of the URL. Eg. 2ff9822b-27f2-4774-98da-db349b57a38e</li>
+            <li>Please reload the page and then check that your <a href="https://habitica.com/#/options/settings/api">User ID and API Token</a> are correct.</li>
+            <li>If you're using Internet Explorer, try another browser. <a href="https://www.google.com/intl/en/chrome/browser/">Chrome</a> or <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a> will be more reliable.</li>
+            <li>If the page's URL starts with "http://" change it to start with "https://" (or just use <a href="https://oldgods.net/habitrpg/habitrpg_user_data_display.html">this correct link</a>).</li>
+            <li>If neither of those help, contact me! See <strong>"Help and Contact Details"</strong> at the bottom of this page.</li>
+        </ul>
+    </div>
+</div>
+<div id="posting">
+	<div class="good hide">
+		<p>Please wait. Posting data to
+		<span id="serverName">Habitica</span>... <span id="statusPost"></span></p>
+	</div>
+</div>
+
+<div id="versionChanges" class="hide"><!-- VERSION SECTION -->
+    <h2>Version History</h2>
+    <dl>
+        <dt>0.1 - beta release <span class="date">2016-12-12</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li class="subheading">Overview</li>
+                    <li class="subheading">Member List Section (sample)</li>
+					<li class="subheading">Member Activity Section (sample)</li>
+					<li class="subheading">Member Stats Section (sample)</li>
+                    <li class="subheading">Chat Export Section</li>
+					<li class="subheading">Chat Export without System Messages Section</li>
+                </ul>
+            </li>
+            <li>Documentation:
+                <ul>
+                    <li>Privacy and security notes (also related comments within the code)</li>
+                    <li>What's On This Page? (descriptions of each feature)</li>
+                    <li>Possible Future Features</li>
+                    <li>Suspected Bugs (no support for old browsers; mobile support unknown)</li>
+                    <li>Help and Contact Details</li>
+                </ul>
+            </li>
+        </ul></dd>
+    </dl>
+    <div class="showHideToggle closer" data-target="versionChanges" data-scrolltotop="true">close version history <span class="lowlight">(or click the version number again to close)</span></div>
+    <hr />
+</div><!-- end of div id="versionChanges" -->
+
+
+<div id="DASHBOARD"></div>
+<div id="TOC"></div>
+<div id="MAIN"></div>
+
+<div id="documentationAndForm">
+   <p>This page shows you certain information from your <a
+   href="https://habitica.com/">Habitica</a> account. You can read the
+   full list below, or just enter your details and try it out.</p>
+
+    <iframe src="null.htm" id="formPasswdSaveFix" name="formPasswdSaveFix" style="display:none"></iframe><!-- DAMN YOU CHROME!! DAMN YOU!!!! http://stackoverflow.com/a/9116737 -->
+    <form id="userApiDetailsForm" method="POST" action="" target="formPasswdSaveFix">
+        <fieldset>
+            <legend><span class="highlight">Enter your Habitica API details</span>
+            (from the <a href="https://habitica.com/#/options/settings/api">Settings
+             -&gt; API page</a>)
+            </legend>
+            <label for="userId"><span>User ID</span>
+                <input type="text" name="userId" id="userId"  />
+            </label>
+            <label for="apiToken"><span>API Token</span>
+                <input type="password" name="apiToken" id="apiToken"  />
+            </label>
+			<label for="challengeId"><span>Challenge ID</span>
+                <input type="text" name="challengeId" id="challengeId"  />
+            </label>
+			<div id="exportOptionSelector"></div>
+            <input type="submit" value="Fetch Group Data" />
+			<p class="highlight">Challenge ID:</p>
+			<p>Enter either the Challenge ID, or the URL for the Challenge. The Challenge ID is a string of characters similar to your User ID, e.g. 2ff9822b-27f2-4774-98da-db349b57a38e. The Challenge ID appears at the end of the URL or on the left hand panel on the website. It is not the name of the guild. You can always just post the entire URL, which is much easier!</p>
+			<div id="exportOptionDesc"></div>
+            <p class="highlight">Privacy and security notes:</p>
+            <ul>
+            <!--<li>If you access this page from the Data menu on the Habitica
+            website, your User ID will be automatically added to the form
+            above.</li> $$$ Maybe one day when the tool that good--->
+            <li>Your API Token is a password - do not share it with anyone,
+            not even the maintainer of this page if you are seeking help.</li>
+            <li>When you enter your User ID and API Token here and click
+            "Fetch My Data", your ID and Token are sent to Habitica's servers.
+            They are not sent anywhere else.
+            To confirm that, you can ask someone who knows the JavaScript
+            programming language to examine the source of this page.</li>
+            <li>This page does not save your User ID and API Token to any
+            location, but your browser might, if it has been configured to
+            save form and password information. If you are using this page
+            on a shared computer, you should clear any data that the browser
+            has saved.</li>
+            <li>You cannot view anyone else's private data by using this page.</li>
+            <li>To clear your data, reload the page.</li>
+            </ul>
+        </fieldset>
+    </form>
+
+
+    <div>
+		<h2>What's On This Page?</h2>
+		<ul>
+			<div id="sectionDesc"></div>
+		</ul>
+		<p>><span class="subheading">FYI:</span> Last Active date is the latest date of either Cron, Chat or Drop. It does not include if the user is chatting in other areas of Habitica.</p>
+		
+		<h2>Possible Future Features</h2>
+		<ul>
+			<li>Mammonth Task/Member details</li>
+			<li>Habit/Dailies/To-Dos based completion by member</li>
+			<li>Chat / PM per member with completed tasks</li>
+			<li>Overall Challenge Stats (for Guild Versus Guild)</li>
+			<li>Awarding of Gems and Winner</li>
+		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
+		</ul>
+
+		<h2>Known Bugs</h2>
+		<p>The hiding and closing of sections is a bit funky. (One day I will fix it but not today.)</p>
+		<p>Choosing a porridge option looses your current table settings. (Not sure there is much I can do there...)</p>
+
+		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
+		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
+		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica.</p>
+
+	   <h2>Thank You!</h2>
+	   <p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/#/options/groups/guilds/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/#/options/groups/guilds/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
+	   
+       <h2>Help and Contact Details</h2>
+       <p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
+
+        <p>If you have general questions about Habitica, post them to <a href="https://habitica.com/#/options/groups/tavern">Tavern Talk</a>, <a href="https://habitica.com/#/options/groups/guilds/5481ccf3-5d2d-48a9-a871-70a7380cee5a">The Newbies Guild</a> or <a href="http://habitica.wikia.com/wiki/Board:The_Quarters_-_Q_%26_A">The Quarters - Q & A board</a>.</p>
+    </div>
+	
+	<div id="documentationAndFormClose" class="showHideToggle closer" data-target="documentationAndForm" data-resettoggletext="documentationAndFormToggle">hide documentation / options</div>
+	
+</div><!-- end of div id="documentationAndForm" -->
+	
+</div><!-- end of div id="innerBody" -->
+</body>
+</html>
