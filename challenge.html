@@ -59,11 +59,21 @@ var memberListToFetch = []; //holds memberList that is fetchng (30 limit)  $$$$$
 var memberListToFetch_idOnly = []; //holds memberList that is fetchng (30 limit) $$$$$
 var members;  // hold members of groups $$$$$
 var membersChallenge;  // hold members of groups $$$$$
+var membersTask; //holds information per task per member
+var membersTaskHistory; //holds information per commpletion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups $$$$$
 
+//////////////////////////////////////////////////////////////////////
+////   Global Constants                              /////////////////
+//////////////////////////////////////////////////////////////////////
+var DOUBLEQUOTES = 		'"' //This is to make my life easier... 
+var SECTIONREFRESH = 	"SectionRefresh"
 
-
-
+var altChatGuild =		{
+							'00000000-0000-4000-A000-000000000000': {name: 'Tavern', nameAlt: 'Tavern Overflow', alt:'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'},
+							'5481ccf3-5d2d-48a9-a871-70a7380cee5a': {name: 'Habitica Help', nameAlt: 'Tavern Overflow', alt:'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'},	
+							'2f6085fe-5382-46d6-a0ac-c1b16f4f7780': {name: 'The Duelling Grounds', nameAlt: 'The Duelling Grounds Scoring Board', alt:'87e8ace7-614f-4537-b187-7536d14ae70f'}
+						}	
 //////////////////////////////////////////////////////////////////////
 ////   Sections                              /////////////////
 //////////////////////////////////////////////////////////////////////
@@ -78,100 +88,124 @@ var lastListMemberId = '';  // hold last member id to be used with groups $$$$$
 
 //index array for looping
 var dashboardToDisplay = [
-/*	{id: 'memberCount', label: 'Total', hoverText: 'Total Members in the Group', value: 'group.memberCount', status: 'neutral', showOnly: ''},
-*/	{id: 'memberFetch', label: 'Total Partipants', hoverText: 'Total Members in the Challenge', value: 'group.memberTotals.fetchCount', status: 'neutral', showOnly: ''},
-/*	{id: 'memberQuest', label: 'Questing', hoverText: 'Number of members who have elected to quest', value: 'group.quest.memberCount', status: 'neutral', showOnly: 'party'},
-*/	{id: 'memberFetch', label: 'In Inn', hoverText: 'Total Members In the Inn', value: 'group.memberTotals.inInn', status: 'danger', showOnly: ''},
-/*	{id: 'memberFetch', label: 'Active < 12 hr', hoverText: 'Total Members Active in 12 Hours or Less', value: 'group.memberTotals.activeLess12Hr', status: 'safe', showOnly: ''},
-	{id: 'memberFetch', label: 'Active 12 hr < 24 hr', hoverText: 'Total Members Active between 12 and 24 Hours', value: 'group.memberTotals.activeLess24Hr - group.memberTotals.activeLess12Hr', status: 'safe', showOnly: ''},
-	{id: 'memberFetch', label: 'Active 24 hr < 1 wk', hoverText: 'Total Members Active between 24 Hours and 1 week', value: 'group.memberTotals.activeLessWeek - group.memberTotals.activeLess24Hr', status: 'neutral', showOnly: ''},
-	{id: 'memberFetch', label: 'Active 1 wk < 1 mth', hoverText: 'Total Members Active between 1 week and 1 month', value: 'group.memberTotals.activeLessMonth - group.memberTotals.activeLessWeek', status: 'neutral', showOnly: ''},
-	{id: 'memberFetch', label: 'Active > 1 month', hoverText: 'Total Members Active over 1 month', value: 'group.memberTotals.fetchCount - group.memberTotals.activeLessMonth', status: 'danger', showOnly: ''}
-*/
+	{id: 'memberFetch', label: 'Total Partipants', hoverText: 'Total Members in the Challenge', value: 'group.memberTotals.fetchCount', status: 'neutral', showOnly: []},
+	{id: 'memberFetch', label: 'In Inn', hoverText: 'Total Members In the Inn', value: 'group.memberTotals.inInn', status: 'danger', showOnly: []}
 ]
 
 
 var sectionsToDisplay = [	
-	{type: 'heading', id: 'headingGroup', title: 'Challenge Details', showOnly: '', description: ''},
-		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: '', description: 'Overview of Challenge with Guild stats.', functionCreate: 'formatOverviewSection'},
-	{type: 'heading', id: 'headingGroup2', title: '', showOnly: 'party', description: ''},
-		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: '', description: 'Exportable table of the chat from the Challenge. The easy way to see if your challengers posted new prompts. Or to track team work.'},
-		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: 'party', description: 'Will only show if party is selected. Exportable table of the chat from the Challenge without system messages.'},
-	{type: 'heading', id: 'headingMember', title: 'Member Information', showOnly: '', description: ''},
-		{type: 'sectionTable', id: 'memberList', title: 'Member List', showOnly: '', description: 'A table listing profile information of each member of the group.'},
-		{type: 'sectionTable', id: 'memberActivity', title: 'Member Activity', showOnly: '', description: 'A table listing how active each member of the group is (date-hour format).'},
-		{type: 'sectionTable', id: 'memberStats', title: 'Member Stats', showOnly: '', description: 'A table listing health, mana, XP and other stats of each member.'},
-		{type: 'sectionTable', id: 'memberAttributes', title: 'Member Attributes', showOnly: '', description: 'A table listing strength, intelligence, perception and constitution of the members.'},
+	{type: 'heading', id: 'headingGroup', title: 'Challenge Details', showOnly: [], description: ''},
+		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: [], description: 'Overview of Party & Guild with Guild stats.', functionCreate: 'formatOverviewSection'},
+		{type: 'sectionCustom', id: 'randomWinner', title: 'Random Winner', showOnly: [], description: 'Picks a Random Winner', functionCreate: 'formatRandomWinnerSection'},
+		{type: 'sectionTable', id: 'leadershipTool', title: 'Leadership Tools', showOnly: ['leader'], description: 'Tools for Challenge leaders to award gems and bulk message users.'},
+	{type: 'heading', id: 'headingGroup2', title: '', showOnly: ['party'], description: ''},
+		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Exportable table of the chat from the Party & Guild. The easy way to see if your challengers posted new prompts. Or to track team work.'},
+		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild without system messages.'},
+		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild of only the system messages.'},
+	{type: 'heading', id: 'headingMember', title: 'Member Information', showOnly: [], description: ''},
+		{type: 'sectionTable', id: 'memberList', title: 'Member List', showOnly: [], description: 'A table listing profile information of each member of the group.'},
+		{type: 'sectionTable', id: 'memberActivity', title: 'Member Activity', showOnly: [], description: 'A table listing how active each member of the group is (date-hour format).'},
+		{type: 'sectionTable', id: 'memberStats', title: 'Member Stats', showOnly: [], description: 'A table listing health, mana, XP and other stats of each member.'},
+		{type: 'sectionTable', id: 'memberAttributes', title: 'Member Attributes', showOnly: [], description: 'A table listing strength, intelligence, perception and constitution of the members.'},
+	{type: 'heading', id: 'headingMember', title: 'Completion Stats', showOnly: [], description: ''},
+		{type: 'sectionTable', id: 'membersChallenge', title: 'Member Overall Completion', showOnly: [], description: 'A table listing the summary  completion statics for each member of the challenge.'},
+		{type: 'sectionTable', id: 'membersTask', title: 'Member per Task Completion', showOnly: [], description: 'A table listing the summary completion statics for each member for each task of the challenge.'},
+		{type: 'sectionTable', id: 'membersTaskHistory', title: 'All Task Completion History', showOnly: [], description: 'A table listing the each time a task was completed for all tasks for all members.'},
+
 ]
 
 var sectionTables =	{}
+sectionTables['leadershipTool'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
+	babyBear: {show: [1,6,12], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,6,7,8,9,12], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 12 ]}],
+	subTitle: function (){
+		var html = ''
+		html += 'To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.'
+		return html 		
+	},
+	uuidIndex: 0,
+	nameIndex: 1,
+	extraButton: function(){
+	
+		var returnButton = [
+		{
+			text: 'Message User',
+			action: function ( e, dt, node, config ) {
+					var rowData = sectionTables['leadershipTool'].table.rows( { selected: true } ).data().toArray();
+					var uuidIndex = sectionTables['leadershipTool'].uuidIndex;
+					var nameIndex = sectionTables['leadershipTool'].nameIndex;
+					postMessageUser(rowData, uuidIndex, nameIndex)	
+				},
+			className: 'messageUserButton'
+		}]
+		
+		return returnButton
+	}
+}
 sectionTables['chatExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Admin', 'Posted', 'Epoch', 'Text'], 
 	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
-	babyBear: {show: [0,1,6,8], orderBy: [[6, 'desc']]},
+	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
 	extraColumnDefs: [],
 	subTitle: function (){
 		var html = ''
-		var chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
-		if (chatDayPeriod < 5){
-			//set time into minutes
-			timeDivision = (60 * 1000)
-			timeDivisonName = ' min'
-		} else if (chatDayPeriod < 20) {
-			//set time into hours
-			timeDivision = (60 * 60 * 100)
-			timeDivisonName = ' hr'
-		} else {
-			//set time into days
-			timeDivision = (60 * 60 * 24 * 1000)
-			timeDivisonName = ' day'
-		}
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + chatDayPeriod + ' days)</p>'
+	
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
 		return html 
 	}
 }
+
 sectionTables['chatNotSystemExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Admin', 'Posted', 'Epoch', 'Text'], 
 	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
-	babyBear: {show: [0,1,6,8], orderBy: [[6, 'desc']]},
+	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
 	extraColumnDefs: [],
 	subTitle: function (){
 		var html = ''
-		var chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
-		if (chatDayPeriod < 5){
-			//set time into minutes
-			timeDivision = (60 * 1000)
-			timeDivisonName = ' min'
-		} else if (chatDayPeriod < 20) {
-			//set time into hours
-			timeDivision = (60 * 60 * 100)
-			timeDivisonName = ' hr'
-		} else {
-			//set time into days
-			timeDivision = (60 * 60 * 24 * 1000)
-			timeDivisonName = ' day'
-		}
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + chatDayPeriod + ' days)</p>'
+		
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
 		return html 
 	}
 }
 
+sectionTables['chatSystemExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Admin', 'Posted', 'Epoch', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
+	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		return html 
+	}
+}
 
 sectionTables['memberList'] = {
 	type: 'member',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Admin', 'Can PM?'],
-	dataTable: ['id', 'profile.namePretty', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin', 'inbox.canPM'],
-	babyBear: {show: [0,1,3,4], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,4,5,6,7], orderBy: [[1, 'asc']]},
+	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Admin',  'Born', 'Next Birthday', 'Can PM?'],
+	dataTable: ['id', 'profile.nameLink', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin',  'creation.shortDate',  'creation.nextBirthday.shortDate', 'inbox.canPM'],
+	babyBear: {show: [1,3,4], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,4,5,6,10], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 9 ]}],
 	subTitle: function (){
@@ -183,13 +217,13 @@ sectionTables['memberActivity'] = {
 	type: 'member',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.totalLines', 'lastChat.textPretty', 'preferences.sleep'],
-	babyBear: {show: [0,1,6,12], orderBy: [[1, 'asc']]},
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
+	babyBear: {show: [1,6,12], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [0,1,2,3,6,7,8,9,12], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 12 ]}],
 	subTitle: function (){
-		var html = ''
+		var html = sectionHeadingLastActive()
 		return html 
 	}
 }
@@ -198,8 +232,8 @@ sectionTables['memberStats'] = {
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Health', 'Current Mana', 'Mana Max', 'Current Mana %', 'Gold', 'XP', 'XP to Next Level' ], 
 	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'stats.hpPretty', 'stats.mpPretty', 'stats.maxMPPretty', 'stats.percentageMP', 'stats.gpPretty', 'stats.expPretty', 'stats.toNextLevelPretty'],
-	babyBear: {show: [0,1,8,9,10], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,5,6,8,9,10,11], orderBy: [[1, 'asc']]},
+	babyBear: {show: [1,8,9,10], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,6,7,8,9,10,11], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-right', 'targets': [8,9,10,11,12,13,14]}],
 	subTitle: function (){
@@ -207,6 +241,7 @@ sectionTables['memberStats'] = {
 		return html 
 	}
 }
+
 sectionTables['memberAttributes'] = {
 	type: 'member',
 	dataSet: [], 
@@ -222,7 +257,63 @@ sectionTables['memberAttributes'] = {
 	}
 }
 
+sectionTables['membersChallenge'] = {
+	type: 'member',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Joined', 'Last Cron', 'Last Active',  'First Completion',  'Latest Completion',  'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Completed', 'Total Postivie Completed', 'Total Negative Completed',  'Time Diff Min', 'Time Diff Max', 'Time Diff Min Todo', 'Time Diff Max Todo', 'Time Diff Habit', 'Time Diff Max Habit', 'Time Diff Min Daily', 'Time Diff Max Daily', 'Value Diff Min', 'Value Diff Max', 'Value Diff Min Todo', 'Value Diff Max Todo', 'Value Diff Habit', 'Value Diff Max Habit', 'Value Diff Min Daily', 'Value Diff Max Daily'], 
+	dataTable: ['id', 'profile.namePretty', 'challengeStats.joined.shortDate',  'lastLoggedIn.shortDate', 'lastActive.shortDate', 'challengeStats.first.shortDate',  'challengeStats.last.shortDate',  'challengeStats.streak.min', 'challengeStats.streak.max', 'challengeStats.streakNeg.min', 'challengeStats.streakNeg.max', 'challengeStats.count', 'challengeStats.countPostive', 'challengeStats.countNegative', 'challengeStats.timeDiffMin.overall', 'challengeStats.timeDiffMax.overall', 'challengeStats.timeDiffMin.todo', 'challengeStats.timeDiffMax.todo', 'challengeStats.timeDiffMin.habit', 'challengeStats.timeDiffMax.habit', 'challengeStats.timeDiffMin.daily',  'challengeStats.timeDiffMax.daily', 'challengeStats.valueDiffMin.overall', 'challengeStats.valueDiffMax.overall', 'challengeStats.valueDiffMin.todo', 'challengeStats.valueDiffMax.todo', 'challengeStats.valueDiffMin.habit', 'challengeStats.valueDiffMax.habit', 'challengeStats.valueDiffMin.daily',  'challengeStats.valueDiffMax.daily'],
+	babyBear: {show: [1,2,6,11], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [1,2,3,4,5,6,7,8,11,12,13,14,15,22,23], orderBy: [[1, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]}],
+	subTitle: function (){
+		var html = ''
+		html = 'To Do Streaks are not shown in Min/Max Streaks as Max of 1.'
+		return html 
+	}
+}
+sectionTables['membersTask'] = {
+	type: 'membersTask',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'First Completion',  'Latest Completion',  'Reported Streak', 'Actual Current Streak', 'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Completed', 'Total Postivie Completed', 'Total Negative Completed', 'Time Diff Min', 'Time Diff Max', 'Value Diff Min', 'Value Diff Max'], 
+	dataTable: ['member.id', 'member.profile.namePretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.text', 'task.notes',  'task.creation.shortDate',  'task.challengeStats.first.shortDate',  'task.challengeStats.last.shortDate',  'task.streak', 'task.challengeStats.streak.current', 'task.challengeStats.streak.min', 'task.challengeStats.streak.max', 'task.challengeStats.streakNeg.min', 'task.challengeStats.streakNeg.max', 'task.challengeStats.count', 'task.challengeStats.countPostive', 'task.challengeStats.countNegative', 'task.challengeStats.timeDiffMin', 'task.challengeStats.timeDiffMax', 'task.challengeStats.valueDiffMin', 'task.challengeStats.valueDiffMax'],
+	babyBear: {show: [1,5,6,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	mamaBear: {show: [1,5,6,10,11,12,17,18,19,20,21], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]}],
+	subTitle: function (){
+		var html = ''
+		return html 
+	}
+}
+sectionTables['membersTaskHistory'] = {
+	type: 'membersTaskHistory',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'Completed',  'Time Diff (Hrs)',  'Value', 'Value Diff'], 
+	dataTable: ['member.id', 'member.profile.namePretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.text', 'task.notes', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
+	babyBear: {show: [1,5,6,9], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	mamaBear: {show: [1,2,5,6,7,9,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,6,8,9,10,11,12]}],
+	subTitle: function (){
+		var html = ''
+		html = 'Daily completed before cron will show the cron time as the completion date. If the member is resting in the Inn no activity will be recorded.'
+		return html 
+	}	
+}
 	
+function sectionHeadingLastActive() {	
+	var html = ''
+	html += '<p>The Last Active Date is the last date of either the Last Cron, Last Chat for this '
+	if (groupId == 'party') {
+		html += 'party, ' // <span class="showHideToggle" data-target="memberBuffSection" data-closemainsections="true">Last Buff, Last Transformation,</span> '
+	} else
+	{
+		html += 'guild, '
+	}
+	html += 'or Last Drop. A member may be active in other areas of Habitica, for example be chatting in another guild but will not show here.</p>'
+	return html
+}
 			
 
 //export options	
@@ -243,6 +334,17 @@ var exportFormats = [
 //////////////////////////////////////////////////////////////////////
 ////   Global Connection Variables      //////////////////////////////
 //////////////////////////////////////////////////////////////////////
+var warningMessage				= 	'PLEASE ENSURE YOUR MESSAGE IS:\n' +
+									'\n\u2022 is respectful, supportive and courteous;' + 
+									'\n\u2022 is not spam, including unwanted advertisements of products, social media accounts, etc;' +
+									'\n\u2022 is not begging for a gift of gems or a subscription' +
+									'\n\u2022 meets all requirements of the Community Guidelines of Habitica (https://habitica.com/static/community-guidelines). ' +
+									'\n\u2022 meets all requirements of the Term of Service of Habitica (https://habitica.com/static/terms). ' +
+									'\n' +
+									'\nFailure to do so can lead to minor consequences like warning to severe consequences including account bans & deletions.' +
+									'\n' +
+									'\nIf you have any concerns, please email Lemoness (leslie@habitica.com) for clarification.'
+
 var serverName					= 'Habitica'; // used in "loading" message
 var serverUrl					= 'https://habitica.com/api/v3';
 var serverPathContent			= '/content?language=en';
@@ -262,13 +364,14 @@ var userId						= '';
 var apiToken					= '';
 var challengeId 				= ''; //holds selected challenge (drop down)
 var groupId 					= ''; //holds group id from 
-var exportOption 			 	= 'papaBear';
-var exportFormat			 	= 0;
-var debug						= true;
-var debugShowObject				= true;
+var exportOption 			 	= 'babyBear';
+var exportFormat			 	= 1;
+var debug						= false;
+var debugShowObject				= false;
 
-
+if (debug || debugShowObject) serverName = '*** TURN DEBUG OFF! *** - ' + serverName
 if (debug) console.log('debug 1');
+
 
 var sectionOpen = ''; // holds the ID attribute of a section of the page;
                       // persists through re-fetch of data so we can
@@ -343,7 +446,9 @@ if (debug) console.log('debug enableShowHideToggling');
 		html +=  '<select name="exportOption" id="exportOption">';
 		if (debugShowObject) console.log(exportOptions);
 		$.each(exportOptions, function(index, obj){
-			html += '<option value="' + obj.id + '">' + obj.shortDesc + '</option>';
+			html += '<option value="' + obj.id + '"'
+			if (obj.id == exportOption) html += ' selected '
+			html += '>' + obj.shortDesc + '</option>';
 		});
 		html += '</select></label>'
 
@@ -351,7 +456,9 @@ if (debug) console.log('debug enableShowHideToggling');
 		html +=  '<select name="exportFormat" id="exportFormat">';
 		if (debugShowObject) console.log(exportOptions);
 		$.each(exportFormats, function(index, obj){
-			html += '<option value="' + obj.id + '">' + obj.shortDesc + '</option>';
+			html += '<option value="' + obj.id + '"'
+			if (obj.id == exportFormat) html += ' selected '
+			html += '>' + obj.shortDesc + '</option>';
 		});
 		html += '</select></label>'
 
@@ -567,7 +674,7 @@ function fetchData() {
 			{
 				groupId = challenge.group.id
 				//if group id is Tavern or Newbies set group as Tavern OverFlow
-				if (groupId == '00000000-0000-4000-A000-000000000000' || groupId == '5481ccf3-5d2d-48a9-a871-70a7380cee5a') groupId = 'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'
+				if (altChatGuild[groupId] != undefined) groupId = altChatGuild[groupId].alt
 				fetchGuildData();
 			}
 			
@@ -801,6 +908,110 @@ function fetchData() {
 
 }
 
+//////////////////////////////////////////////////////////////////////
+////  Post functions      //////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// All post functions are implemented serial as they are unreliable when performed in parallel.
+function postMessageUser(rowData, uuidIndex, nameIndex) {
+	if (debug) console.log('debug postMessageUser start');
+	var urlToPost = ''	
+	var privateMessageList = ''
+	var index = 0
+	var privateMessage = ''
+	
+	
+	if (rowData.length == 0){
+		if (debug) console.log('debug no users to remove');
+		alert('No row selected.\nPlease select a row before trying again.');
+		return;
+	
+	} else {
+		if (debugShowObject) console.log( rowData );
+		//Check if message to be sent
+		var optionalMessage = 'Thank You!'
+		
+		privateMessage = prompt('Please enter your private message to be sent to the users selected:\n\n' + warningMessage, optionalMessage)
+
+		for(var i = 0; i < rowData.length; i++)
+		{
+			privateMessageList += '\n\u2022  ' + rowData[i][nameIndex]
+		}
+		
+		if (privateMessage != null){
+			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to the selected users?' + privateMessageList + '\n\nThere is no undo!')){
+				privateMessageList = ''
+				postNextMessageUser()
+			} else {
+				alert('Action cancelled')
+				return;
+			}
+		} else {
+			alert('Action cancelled')
+			return;
+		}
+	}
+	
+	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	function postNextMessageUser(){
+		$('#posting .good').show();
+		
+		obj = rowData[index]
+		var newData = {message: privateMessage, toUserId: obj[uuidIndex]}
+		urlToPost = serverUrl + serverMessageUser //+ '/' + obj[uuidIndex] + '?message=' + privateMessage
+		$('#posting #statusPost').text('Messaging ' + obj[nameIndex] );
+		if (debugShowObject) console.log(urlToPost);
+		if (debugShowObject) console.log(newData);
+		$.ajax({
+			url: urlToPost,
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(newData),
+			dataType: 'json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+				},
+			success: postMessageUserSuccess,
+			error: postMessageUserFailure
+		});		
+	}
+		
+
+	
+	function postMessageUserFailure(UserNotFound){
+		if (debug) console.log('debug postMessageUserFailure start');
+		if (debugShowObject) console.log(UserNotFound);
+		alert('User not found ' + obj[nameIndex]  + '.\n\nPlease refetch your data and try again.');	
+		index++
+		
+		postMessageUserCheckCompleted()
+	}
+
+
+	function postMessageUserSuccess(data){
+		if (debug) console.log('debug postMessageUserSucess start');
+		$('#posting #statusPost').text('Succesfully Messaged ' + obj[nameIndex] );
+		if (debugShowObject) console.log(data);
+		privateMessageList += '\n\u2022  ' + obj[nameIndex]  
+		index++
+		
+		postMessageUserCheckCompleted()
+	}
+	
+	function postMessageUserCheckCompleted(){
+		if (index === rowData.length){
+			$('#posting .good').hide();
+			if (debugShowObject) console.log(privateMessageList);
+			alert('The following users have been messaged:' + privateMessageList + '\n\nYour data will now be refreshed')
+			fetchData() 
+		} else
+		{
+			postNextMessageUser()
+		}		
+	
+	}
+}
 	
 function parseData() {
 	if (debug) console.log('debug parseData start');
@@ -831,8 +1042,15 @@ function parseData() {
 	
 	formatAndDisplayDASHBOARD();
     formatAndDisplayTOC();
-    formatAndDisplayMAIN();
+
 	
+	if ($('#MAIN')[0].innerHTML.length > 1) {
+		//Keep previous table settings
+		refreshAndDisplayMAIN();
+	} else {
+		formatAndDisplayMAIN();
+	}
+ 
 	function formatAndDisplayDASHBOARD() {
 		// Not required to be changed. Section controlled by Sections defined above.
 		var html = '<ul>';
@@ -914,7 +1132,6 @@ function parseData() {
 					   '</ul><div class="clear"></div><hr class="padded" />');
 	}
 
-
 	function formatAndDisplayMAIN() {
 		// Not required to be changed. Section controlled by Sections defined above.
 		var keys = [];
@@ -966,12 +1183,60 @@ function parseData() {
 			openRelatedSections();
 		}
 	}
+	
+function refreshAndDisplayMAIN() {
+		// Not required to be changed. Section controlled by Sections defined above.
+		var keys = [];
+		var keyToAdd = ''
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			keyToAdd=''
+			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') == true && groupId == 'party') || (obj.showOnly.includes('leader') == true && userId == group.leader.id)) {
+				keyToAdd = obj.id
+				if (obj.type == 'heading') keyToAdd = ''
+				if (keyToAdd != '') keys.push(keyToAdd)
+			}
+		});
+		if (debugShowObject) console.log(keys);
+		
+		var html = '';		
+		var functions = []; // functions to run after HTML code has been loaded
+		var functionsPar = []; //Par to be passed in Function
+		for (var i=0,ic=keys.length; i<ic; i++) {
+			var data = MAIN[keys[i]];
+			if (! data) {
+				continue;
+			}
 
+			html = data.refreshHtml
+			$('#' + data.id + ' #' + data.refreshId).html(html)
+			
+			if (data['function']) {
+				functions.push(data['function']);
+				functionsPar.push(data['functionPar']);
+			}
+		}
+
+		// execute any functions that need to be run AFTER the bulk of the
+		// HTML has been created:
+		$.each(functions, function(index,fn){
+			var passPar = functionsPar[index];
+			fn(passPar);
+		});
+		if (sectionOpen && sectionOpen  !=  'documentationAndForm'
+						&& sectionOpen  !=  'versionChanges'
+		) {
+			// reopen the section that the user had open before re-fetching
+			// data (except for sections that don't display the user's own data):
+			$('#' + sectionOpen).show();
+			openRelatedSections();
+		}
+	}
 
 	openRelatedSections = function() {
 
 	}
-	
+
 	function userDataInHeader() {
 		var displayName = user.profile.nameNotPretty //renderFormattedText(user.profile.name);
 		
@@ -1025,6 +1290,8 @@ function parseData() {
 			dateStr = moment(date).format('ddd Do MMMM YYYY, h:mm:ss a');
 		} else if (style === 'utcTime') {
 			dateStr = moment(date).utc().toISOString();
+		} else if (style === 'epoch') {
+			dateStr = moment(date).valueOf()
 		} else if (style === 'relativeTime') {
 			if (date == neverDate) {
 				dateStr = '-N/A-'
@@ -1071,42 +1338,54 @@ function parseData() {
 		
 		if (debug) console.log('debug constructTable ' + dataSetSectionId);		
 		
-		//create column header
-		$.each(dataSetTableHeader, function(index, obj){
-			formattedTableHeader.push({'title': obj, 'classname': dataSetTableSection + '_' + obj.replace(/ /g, ''),  'defaultContent': ''})
-		});
-		
-		if (debugShowObject) console.log(formattedTableHeader);
-		
-		
-		showButtons = formatShowButton()
-		
-		if (debugShowObject) console.log(showButtons);
+		if ($('#'+ dataSetTableSection)[0].rows.length != 0){
+			if (debug) console.log ('Table exists')
 
-		allColumnDefs = [
-			{ targets: defaultShow, visible: true},
-			{ targets: '_all', visible: false }
-		]
-		allColumnDefs = allColumnDefs.concat(sectionTables[dataSetSectionId].extraColumnDefs)
-		
-		if (debugShowObject) console.log(allColumnDefs);
+			var table = $('#'+ dataSetTableSection).DataTable();
 
-		
-		sectionTables[dataSetSectionId].events = $('#events');
-		$(document).ready(function() {
-			sectionTables[dataSetSectionId].table = $('#'+ dataSetTableSection).DataTable( {
-				data: dataSetTable,
-				columns: formattedTableHeader,
-				columnDefs: allColumnDefs,
-				order: defaultOrderBy,
-				lengthMenu: [ [10, 25, 50, 100, 200, 500, -1], [10, 25, 50, 100, 200, 500, "All"] ],
-				select: selectValue, 
-				dom: 'Bfrtip',
-				buttons: showButtons
+			table.clear();
+			table.draw();
 				
+			table.rows.add(dataSetTable);
+			table.draw()
+		} else {
+			if (debug) console.log ('Table does not exists')
+			//create column header
+			$.each(dataSetTableHeader, function(index, obj){
+				formattedTableHeader.push({'title': obj, 'classname': dataSetTableSection + '_' + obj.replace(/ /g, ''),  'defaultContent': ''})
+			});
+			
+			if (debugShowObject) console.log(formattedTableHeader);
+			
+			
+			showButtons = formatShowButton()
+			
+			if (debugShowObject) console.log(showButtons);
+
+			allColumnDefs = [
+				{ targets: defaultShow, visible: true},
+				{ targets: '_all', visible: false }
+			]
+			allColumnDefs = allColumnDefs.concat(sectionTables[dataSetSectionId].extraColumnDefs)
+			
+			if (debugShowObject) console.log(allColumnDefs);
+
+			
+			sectionTables[dataSetSectionId].events = $('#events');
+			$(document).ready(function() {
+				sectionTables[dataSetSectionId].table = $('#'+ dataSetTableSection).DataTable( {
+					data: dataSetTable,
+					columns: formattedTableHeader,
+					columnDefs: allColumnDefs,
+					order: defaultOrderBy,
+					lengthMenu: [ [10, 25, 50, 100, 200, 500, -1], [10, 25, 50, 100, 200, 500, "All"] ],
+					select: selectValue, 
+					dom: 'Bfrtip',
+					buttons: showButtons
+					
+				} );
 			} );
-		} );
-		
+		}
 		
 		function formatShowButton() {
 			var returnButtons = []
@@ -1219,14 +1498,8 @@ function parseData() {
 			
 			return returnButtons
 		}
-		
 	}
-	
-	
-	
-	
-	
-	
+		
 	
 	
 	
@@ -1308,17 +1581,18 @@ function parseData() {
 		//run functions to create for TOC / MAIN 
 		$.each(sectionsToDisplay, function(index, obj){
 			if (obj.type == 'sectionTable') {
-				if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') == true && groupId == 'party') || (obj.showOnly.includes('leader') == true && userId == group.leader.id)) {
 					formatTableSection(obj.id, obj.title)
 				}
 			} else if (obj.type == 'sectionCustom') {
 				var fn = obj.functionCreate
 				eval(fn + '("' + obj.id + '", "' + obj.title + '")')
 			}
-		});
+			
+		});		
 		
-		
-		
+	
+	
 	//////////////////////////////////////////////////////////////////////
     ////   Prep data before using                            ////////////
 	//
@@ -1328,11 +1602,12 @@ function parseData() {
 		
 		function formatAllDataAndCollate() {
 		
-			var arrayToAdd = []; //Used to create final array to add to dataSet
+			var addToArray = []; //Used to create final array to add to dataSet
 			var tempMembersList = []; //For looping through each members and adding missing variables
 			var tempQuestsList = []; //For looping through each quests and adding missing variables
 			var questRewardItem = {}; //For collating
-			var doubleQuotes = '"' //This is to make my life easier... Maybe make it a global constant?
+			var membersTask = [];
+			var membersTaskHistory = [];
 			
 			//To complete chat stats
 			var lastEphochTime = 0
@@ -1343,7 +1618,7 @@ function parseData() {
 			var attributeArrayToConstruct = ['str', 'int', 'per', 'con']
 			
 			var gearArrayToConstruct = ['armor', 'back', 'body', 'eyewear', 'head', 'headAccessory', 'shield', 'weapon']
-			
+						
 			///////////////////////////////////////////////////////////////
 			////   Single   Data                              ////////////
 			//////////////////////////////////////////////////////////////
@@ -1353,7 +1628,7 @@ function parseData() {
 			//User
 			user.profile.nameNotPretty = user.profile.name
 			user.profile.namePretty = renderFormattedText(user.profile.name)
-
+			
 			//challenge
 			challenge.nameNotPretty = challenge.name
 			challenge.namePretty = renderFormattedText(challenge.name)
@@ -1374,12 +1649,27 @@ function parseData() {
 			group.memberTotals.activeLess24Hr = 0 //to populate later
 			group.memberTotals.activeLessWeek = 0 //to populate later
 			group.memberTotals.activeLessMonth = 0 //to populate later
-			//if (groupId == 'party')	group.quest.memberCount = 0 //to populate later
+//			if (groupId == 'party')	group.quest.memberCount = 0 //to populate later
 			group.memberTotals.inInn_activeLess12Hr = 0 //to populate later
 			group.memberTotals.inInn_activeLess24Hr = 0 //to populate later
 			group.memberTotals.inInn_activeLessWeek = 0 //to populate later
 			group.memberTotals.inInn_activeLessMonth = 0 //to populate later
-			//if (groupId == 'party')	group.quest.inInn_memberCount = 0 //to populate later
+//			if (groupId == 'party')	{
+//				group.quest.inInn_memberCount = 0 //to populate later
+//				group.quest.damageTotal = 0 //to populate later
+//				group.quest.damageTotalCurrent = 0 //to populate later
+//				group.quest.damageTotalPrevious = 0 //to populate later
+//				group.quest.damageBoss = 0 //to populate later
+//				group.quest.damageBossCurrent = 0 //to populate later
+//				group.quest.damageBossPrevious = 0 //to populate later
+//				group.quest.collectionTotalCurrent = 0 //to populate later
+//				group.quest.collectionTotalPrevious = 0 //to populate later
+//				if (group.quest.active) {
+//					 noQuestsInChat = 0
+//				} else {
+//					noQuestsInChat = -1
+//				}
+//			}
 			group.memberTotals.class = {}
 			group.memberTotals.class.warrior = 0 //to populate later
 			group.memberTotals.class.mage = 0 //to populate later
@@ -1391,7 +1681,82 @@ function parseData() {
 			group.chatTotals.count_system = 0 //to populate later
 			group.chatTotals.timePeriod = []
 			group.chatTotals.timePeriod_notSystem = []
-			group.chatTotals.timePeriod_system = []
+			group.chatTotals.timePeriod_system = []		
+
+
+			// Loop through all members to add all items to be populated (avoid messy undefines later)
+			$.each(memberListToFetch, function(index, obj){
+					members[obj.id].lastChat = {}
+					members[obj.id].lastChat.text = ''
+					members[obj.id].lastChat.textPretty = ''
+					members[obj.id].lastChat.occured = reformatDate(neverDate)
+					members[obj.id].lastChat.countTotal = 0
+					members[obj.id].lastChat.countLess12Hr = 0
+					members[obj.id].lastChat.countLess24Hr = 0
+					
+					members[obj.id].challengeStats = {}
+					members[obj.id].challengeStats.joined = reformatDate(neverDate)
+					
+					members[obj.id].challengeStats.streak = {}
+					members[obj.id].challengeStats.streak.min = undefined
+					members[obj.id].challengeStats.streak.max = undefined
+					members[obj.id].challengeStats.streakNeg = {}
+					members[obj.id].challengeStats.streakNeg.min = undefined
+					members[obj.id].challengeStats.streakNeg.max = undefined
+
+					members[obj.id].challengeStats.first = reformatDate(neverDate)
+					members[obj.id].challengeStats.last = reformatDate(neverDate)
+					members[obj.id].challengeStats.count = 0
+					members[obj.id].challengeStats.countPostive = 0
+					members[obj.id].challengeStats.countNegative = 0
+
+					members[obj.id].challengeStats.timeDiffMin = {}
+					members[obj.id].challengeStats.timeDiffMax = {}
+					members[obj.id].challengeStats.timeDiffMin.overall = undefined
+					members[obj.id].challengeStats.timeDiffMax.overall = undefined
+					members[obj.id].challengeStats.timeDiffMin.todo = undefined
+					members[obj.id].challengeStats.timeDiffMax.todo = undefined
+					members[obj.id].challengeStats.timeDiffMin.habit = undefined
+					members[obj.id].challengeStats.timeDiffMax.habit = undefined
+					members[obj.id].challengeStats.timeDiffMin.daily = undefined
+					members[obj.id].challengeStats.timeDiffMax.daily = undefined
+
+
+					members[obj.id].challengeStats.valueDiffMin = {}
+					members[obj.id].challengeStats.valueDiffMax = {}
+					members[obj.id].challengeStats.valueDiffMin.overall= undefined
+					members[obj.id].challengeStats.valueDiffMax.overall = undefined
+					members[obj.id].challengeStats.valueDiffMin.todo = undefined
+					members[obj.id].challengeStats.valueDiffMax.overall_todo = undefined
+					members[obj.id].challengeStats.valueDiffMin.habit = undefined
+					members[obj.id].challengeStats.valueDiffMax.overall_habit = undefined
+					members[obj.id].challengeStats.valueDiffMin.daily = undefined
+					members[obj.id].challengeStats.valueDiffMax.overall_daily = undefined
+/*										
+					members[obj.id].lastBuff = {}
+					members[obj.id].lastBuff.occured = reformatDate(neverDate)
+					members[obj.id].lastBuff.countTotal = 0
+					members[obj.id].lastBuff.countLess12Hr = 0
+					members[obj.id].lastBuff.countLess24Hr = 0
+
+					members[obj.id].lastTransformation = {}
+					members[obj.id].lastTransformation.occured = reformatDate(neverDate)
+					members[obj.id].lastTransformation.countTotal = 0
+					members[obj.id].lastTransformation.countLess12Hr = 0
+					members[obj.id].lastTransformation.countLess24Hr = 0
+
+					members[obj.id].quest = {}
+					members[obj.id].quest.damageTotal = 0
+					members[obj.id].quest.damageTotalCurrent = 0
+					members[obj.id].quest.damageTotalPrevious = 0
+					members[obj.id].quest.damageBoss = 0
+					members[obj.id].quest.damageBossCurrent = 0
+					members[obj.id].quest.damageBossPrevious = 0
+					members[obj.id].quest.collectionTotal = 0
+					members[obj.id].quest.collectionTotalCurrent = 0
+					members[obj.id].quest.collectionTotalPrevious = 0
+*/					
+			});
 			
 			
 			
@@ -1424,17 +1789,16 @@ function parseData() {
 				//Add in participation dates
 				//assuming travelling from last to earliest
 				if (members[obj.uuid]  !=  undefined) {
-					if (members[obj.uuid].lastChat == undefined) {
-						members[obj.uuid].lastChat = {}
+					members[obj.uuid].lastChat.countTotal++
+					if (moment().subtract(12, 'hours').isBefore(obj.creation.utcTime)) members[obj.uuid].lastChat.countLess12Hr++
+					if (moment().subtract(24, 'hours').isBefore(obj.creation.utcTime)) members[obj.uuid].lastChat.countLess24Hr++
+					
+					if (members[obj.uuid].lastChat.occured.utcTime < obj.creation.utcTime) {
 						members[obj.uuid].lastChat.text = obj.text
 						members[obj.uuid].lastChat.textPretty = obj.textPretty
 						members[obj.uuid].lastChat.occured = obj.creation
-						members[obj.uuid].lastChat.totalLines = 1
-					} else { 
-						members[obj.uuid].lastChat.totalLines++
-					}
-				}
-				
+					} 
+				}				
 				
 				
 				//Date Times, counts etc
@@ -1469,23 +1833,31 @@ function parseData() {
 				
 				
 				$.each(sectionsToDisplay, function(index2, obj2){
-					if (obj2.type == 'sectionTable' && (obj2.showOnly != 'party' || groupId == 'party')){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
 						if (sectionTables[obj2.id].type == 'chat'){
-							arrayToAdd = []; //clear array
+							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
-								arrayToAdd.push(eval('obj.' + obj3))
+								addToArray.push(eval('obj.' + obj3))
 							});
 							//Don't include system messages if chatNotSystemExport
-							if (obj.uuid != 'system' || obj2.id != 'chatNotSystemExport') sectionTables[obj2.id].dataSet.push(arrayToAdd); 
+							if ((obj.uuid != 'system' && obj2.id == 'chatNotSystemExport') || (obj.uuid == 'system' && obj2.id == 'chatSystemExport') || (obj2.id != 'chatNotSystemExport' && obj2.id != 'chatSystemExport')) sectionTables[obj2.id].dataSet.push(addToArray); 
 						}
 						
 					}
 				});
 			}); 
 			if (debug) console.log('Finish collating chatExportSet');
+			group.chatTotals.chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
 
 			
-
+			///////////////////////////////////////////////////////////////
+			////   Challenge Task Section (not Add)            ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(memberListToFetch, function(index, obj){
+				modifyChallengeTaskProperties(obj);
+			});
+			
+			
 			
 			
 			///////////////////////////////////////////////////////////////
@@ -1513,7 +1885,11 @@ function parseData() {
 				members[obj.id].attributeTotals = {}
 				$.each(attributeArrayToConstruct, function (index2, obj2){
 					members[obj.id].attributeTotals[obj2] = {};
-					members[obj.id].attributeTotals[obj2].lvl = Math.floor(members[obj.id].stats.lvl / 2);
+					if (members[obj.id].stats.lvl < 100) {
+						members[obj.id].attributeTotals[obj2].lvl = Math.floor(members[obj.id].stats.lvl / 2)
+					} else {
+						members[obj.id].attributeTotals[obj2].lvl = Math.floor(100 / 2)
+					};
 					members[obj.id].attributeTotals[obj2].buff = members[obj.id].stats.buffs[obj2]
 					members[obj.id].attributeTotals[obj2].allocated = members[obj.id].stats[obj2]
 					members[obj.id].attributeTotals[obj2].gear = 0
@@ -1523,7 +1899,7 @@ function parseData() {
 							var gearKey = members[obj.id].items.gear.equipped[obj3]
 							if (content.gear.flat[gearKey] != undefined) {
 								members[obj.id].attributeTotals[obj2].gear += content.gear.flat[gearKey][obj2]
-								if (content.gear.flat[gearKey].klass == members[obj.id].stats.class) members[obj.id].attributeTotals[obj2].gearBuff += content.gear.flat[gearKey][obj2] / 2
+								if (content.gear.flat[gearKey].klass == members[obj.id].stats.class || content.gear.flat[gearKey].specialClass == members[obj.id].stats.class ) members[obj.id].attributeTotals[obj2].gearBuff += content.gear.flat[gearKey][obj2] / 2
 							}
 						}
 					});
@@ -1532,7 +1908,11 @@ function parseData() {
 				
 
 				//Determine Activity
-				if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastDropItem.utcTime)) {
+				if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastBuff.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastTransformation.occured
+				} else if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastBuff.occured.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastBuff.occured
+				} else if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastDropItem.utcTime)) {
 					members[obj.id].lastActive = members[obj.id].lastDropItem
 				} else if (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastLoggedIn.utcTime){
 					members[obj.id].lastActive = members[obj.id].lastLoggedIn
@@ -1558,10 +1938,156 @@ function parseData() {
 				group.memberTotals.class[members[obj.id].stats.classPretty]++
 				if (members[obj.id].stats.lvl < 11) group.memberTotals.underLevel10++
 				
+			
+				//Calculate task information.
+				$.each(membersChallenge[obj.id].tasks, function(index2, obj2){
+					modifyTaskProperties(obj2)
+					
+					obj2.challengeStats = {}
+					
+					obj2.challengeStats.streak = {}
+					obj2.challengeStats.streak.current = 0
+					obj2.challengeStats.streak.min = undefined
+					obj2.challengeStats.streak.max = undefined
+					obj2.challengeStats.streakNeg = {}
+					obj2.challengeStats.streakNeg.current = 0
+					obj2.challengeStats.streakNeg.min = undefined
+					obj2.challengeStats.streakNeg.max = undefined
+					obj2.challengeStats.first = reformatDate(neverDate)
+					obj2.challengeStats.last = reformatDate(neverDate)
+					obj2.challengeStats.count = 0
+					obj2.challengeStats.countPostive = 0
+					obj2.challengeStats.countNegative = 0
+					obj2.challengeStats.countInn = 0
+					
+					obj2.challengeStats.timeDiffMin = undefined
+					obj2.challengeStats.timeDiffMax = undefined
+					obj2.challengeStats.valueDiffMin = undefined
+					obj2.challengeStats.valueDiffMax = undefined
+
+					
+					if (members[obj.id].challengeStats.joined.utcTime > obj2.creation.utcTime || members[obj.id].challengeStats.joined.utcTime == myDateConverter(neverDate, 'utcTime')) members[obj.id].challengeStats.joined = obj2.creation
+					
+					
+					if (obj2.history == undefined) {
+						obj2.history = []
+					}
+					
+					if (obj2.completed) {
+						if (obj2.dateCompleted != undefined) {
+							var tempDate = myDateConverter(obj2.dateCompleted, 'epoch')
+						} else {
+							var tempDate = myDateConverter(obj2.updatedAt, 'epoch')
+							//daily $$$ADd another variable here?
+						}
+					
+						addToArray = {};
+						addToArray = {date: tempDate, value: obj2.value}
+						obj2.history.push(addToArray)						
+					}	
+
+					var tempValuePrev = 0
+					var tempDatePrev = obj2.creation
+					var firstRun = true
+					
+					$.each(obj2.history, function(index3, obj3){
+						modifyTaskHistoryProperties(obj3)
+						
+						//Completion Streak
+						obj2.challengeStats.count += 1
+						members[obj.id].challengeStats.count += 1
+						if (obj3.value >= tempValuePrev ) {
+							obj2.challengeStats.countPostive += 1
+							members[obj.id].challengeStats.countPostive += 1
+							obj2.challengeStats.streak.current += 1
+							
+							
+							if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+							if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+							if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+							if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+
+							obj2.challengeStats.streakNeg.current = 0
+							
+						} else {
+							obj2.challengeStats.countNegative += 1
+							members[obj.id].challengeStats.countNegative += 1
+							obj2.challengeStats.streakNeg.current += 1						
+							
+							if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+							if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+							if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+							if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+
+								
+							obj2.challengeStats.streak.current = 0
+
+							
+						} 						
+
+						//first & last Active
+						if (obj2.challengeStats.first.utcTime > obj3.datePretty.utcTime || obj2.challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) obj2.challengeStats.first = obj3.datePretty 
+						if (members[obj.id].challengeStats.first.utcTime > obj3.datePretty.utcTime || members[obj.id].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) members[obj.id].challengeStats.first = obj3.datePretty 
+						if (obj2.challengeStats.last.utcTime < obj3.datePretty.utcTime) obj2.challengeStats.last = obj3.datePretty 
+						if (members[obj.id].challengeStats.last.utcTime < obj3.datePretty.utcTime) members[obj.id].challengeStats.last = obj3.datePretty 
+						
+						//TimeDifference
+						obj3.hourDiff = moment(obj3.datePretty.utcTime).diff(moment(tempDatePrev.utcTime), 'hours')
+						if (obj2.challengeStats.timeDiffMin > obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMin = obj3.hourDiff
+						if (obj2.challengeStats.timeDiffMax < obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMax = obj3.hourDiff
+						
+						if (members[obj.id].challengeStats.timeDiffMin.overall > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin.overall == undefined) members[obj.id].challengeStats.timeDiffMin.overall = obj3.hourDiff
+						if (members[obj.id].challengeStats.timeDiffMin[obj2.type] > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMin[obj2.type] = obj3.hourDiff
+						if (members[obj.id].challengeStats.timeDiffMax.overall < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax.overall == undefined) members[obj.id].challengeStats.timeDiffMax.overall = obj3.hourDiff
+						if (members[obj.id].challengeStats.timeDiffMax[obj2.type] < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMax[obj2.type] = obj3.hourDiff
+						
+						
+
+
+						
+						//Value Difference
+						obj3.valueDiff = Math.round((obj3.value - tempValuePrev)*1000)/1000
+						if (obj2.challengeStats.valueDiffMin > obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMin = obj3.valueDiff
+						if (obj2.challengeStats.valueDiffMax < obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMax = obj3.valueDiff
+
+						if (members[obj.id].challengeStats.valueDiffMin.overall> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin.overall== undefined) members[obj.id].challengeStats.valueDiffMin.overall= obj3.valueDiff
+						if (members[obj.id].challengeStats.valueDiffMin[obj2.type]> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin[obj2.type]== undefined) members[obj.id].challengeStats.valueDiffMin[obj2.type]= obj3.valueDiff
+						if (members[obj.id].challengeStats.valueDiffMax.overall < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax.overall == undefined) members[obj.id].challengeStats.valueDiffMax.overall = obj3.valueDiff
+						if (members[obj.id].challengeStats.valueDiffMax[obj2.type] < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.valueDiffMax[obj2.type] = obj3.valueDiff
+						
+						addToArray = {};
+						addToArray = {member: members[obj.id], task: obj2, taskHistory: obj3}
+						membersTaskHistory.push(addToArray)
+						
+						//Reset Values
+						tempValuePrev = obj3.value
+						tempDatePrev = obj3.datePretty
+						firstRun = false
+					});
+					
+					//Final Streaks
+					if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+					if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+					if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+					if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+
+					if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+					if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+					if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+					if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
 				
+					
+					//Add completed to-do or completed daily
+					addToArray = {};
+					addToArray = {member: members[obj.id], task: obj2}
+					membersTask.push(addToArray)
+				});
+			
 								
 				tempMembersList.push(members[obj.id])
 			}); 
+			if (debugShowObject) console.log(membersTaskHistory);
+			if (debugShowObject) console.log(membersTask);
 			if (debugShowObject) console.log(tempMembersList);
 			
 			//Member data format and collate
@@ -1571,21 +2097,56 @@ function parseData() {
 			//////////////////////////////////////////////////////////////
 			$.each(tempMembersList, function(index, obj){			
 				$.each(sectionsToDisplay, function(index2, obj2){
-					if (obj2.type == 'sectionTable' && (obj2.showOnly != 'party' || groupId == 'party')){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
 						if (sectionTables[obj2.id].type == 'member'){
-							arrayToAdd = []; //clear array
+							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
-								arrayToAdd.push(eval('obj.' + obj3))
+								addToArray.push(eval('obj.' + obj3))
 							});
-							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(arrayToAdd);
+							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
 						}
 					}
 				});
 			}); 
+
+			///////////////////////////////////////////////////////////////
+			////   members tasks 							   ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(membersTask, function(index, obj){			
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
+						if (sectionTables[obj2.id].type == 'membersTask'){
+							addToArray = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								addToArray.push(eval('obj.' + obj3))
+							});
+							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+						}
+					}
+				});
+			});
+			
+			
+			///////////////////////////////////////////////////////////////
+			////   members task history					    ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(membersTaskHistory, function(index, obj){			
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
+						if (sectionTables[obj2.id].type == 'membersTaskHistory'){
+							addToArray = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								addToArray.push(eval('obj.' + obj3))
+							});
+							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+						}
+					}
+				});
+			});
+
+
+
 			if (debug) console.log('Finish collating memberListSet');
-			
-			
-			if (debugShowObject) console.log(sectionTables);
 		};
 		
 		//////////////////////////////////////////////////////////////////////
@@ -1635,6 +2196,7 @@ function parseData() {
 			}
 		}
 		
+
 		function modifyUserProperties(obj) {
 			if (obj.profile !=  undefined ){
 				if (obj.profile.blurb  !=  undefined ) {
@@ -1649,8 +2211,10 @@ function parseData() {
 			};
 			if (obj.id == 'system') {
 				obj.profile.namePretty = 'System'
+				obj.profile.nameLink = 'System'
 			} else {
 				obj.profile.namePretty = obj.profile.name //renderFormattedText(obj.profile.name);
+				obj.profile.nameLink = '<a href="https://habitica.com/static/front#?memberId=' + obj.id +'" target="_blank">' + obj.profile.name + '</a>'
 			}
 			if (obj.stats.class == 'wizard')  {
 				obj.stats.classPretty = 'mage'
@@ -1659,6 +2223,26 @@ function parseData() {
 			}
 			obj.inbox.canPM = !obj.inbox.optOut;
 			obj.creation  = reformatDate(obj.auth.timestamps.created);
+			var nextBirthday = moment({
+											year: moment().year(),
+											month: moment(obj.auth.timestamps.created).month(),
+											day: moment(obj.auth.timestamps.created).date(),
+											hour: moment(obj.auth.timestamps.created).hour(),
+											minute: moment(obj.auth.timestamps.created).minute(),
+											second: moment(obj.auth.timestamps.created).second()
+										})
+			if (moment() > nextBirthday) nextBirthday = moment({
+											year: moment().year()+1,
+											month: moment(obj.auth.timestamps.created).month(),
+											day: moment(obj.auth.timestamps.created).date(),
+											hour: moment(obj.auth.timestamps.created).hour(),
+											minute: moment(obj.auth.timestamps.created).minute(),
+											second: moment(obj.auth.timestamps.created).second()
+										})
+			
+			obj.creation.nextBirthday =  reformatDate(nextBirthday)
+			
+			
 			obj.lastLoggedIn  = reformatDate(obj.auth.timestamps.loggedin);
 			obj.lastDropItem  = reformatDate(obj.items.lastDrop.date);
 			//if (debugShowObject) console.log(obj);
@@ -1705,7 +2289,33 @@ function parseData() {
 			obj.stats.toNextLevelPretty = Math.round( obj.stats.toNextLevel * 100)/100;
 			obj.stats.percentageMP = Math.round((obj.stats.mp / (obj.stats.maxMP) * 100) * 100)/100;
 		}
+
+		function modifyTaskProperties(obj) {
+			obj.challenge.details = challengeTasks[obj.challenge.taskId]
+
+			obj.creation  = reformatDate(obj.createdAt);
+			obj.lastUpdated  = reformatDate(obj.updatedAt);		
+			
+			//Round to 2 decimal places
+			obj.valuePretty = Math.round( obj.value * 1000)/1000;
+		}
 		
+		function modifyTaskHistoryProperties(obj) {
+
+			obj.datePretty  = reformatDate(obj.date);		
+			
+			//Round to 2 decimal places
+			obj.valuePretty = Math.round( obj.value * 1000)/1000;
+		}
+
+		function modifyChallengeTaskProperties(obj) {
+			obj.creation  = reformatDate(obj.createdAt);
+			obj.lastUpdated  = reformatDate(obj.updatedAt);		
+			
+			obj.valuePretty = Math.round( obj.value * 1000)/1000;
+		}
+
+
 		function reformatDate(dateString) {
 				var formattedDate = myDateConverter(dateString, 'long');
 				var shortDate     = myDateConverter(dateString, 'short');
@@ -1834,15 +2444,34 @@ function parseData() {
 			//Finally just return the data!
 			if (! html) {
 				return;
-			}
+			} 
 			var id    = sectionId + 'Section';
 			var orderId = sectionId;
-					
+			var refreshId = sectionId + SECTIONREFRESH 
+			html = '<span id="' + refreshId + '">' + html + '</span>'		
 			TOC[orderId] = {'target': id, 'title':  title};
-			MAIN[orderId] = {'id': id, 'title': title, 'longContent': true,
+			MAIN[orderId] = {'id': id, 'title': title, 'refreshHtml': html, 'refreshId': refreshId, 'longContent': true,
 				'html': html};
 		}
 
+		function formatRandomWinnerSection(sectionId, title){
+			var html = ''
+
+			html +=  '<p>This is to be implemented.</p>'
+			
+			//Finally just return the data!
+			if (! html) {
+				return;
+			} 
+			var id    = sectionId + 'Section';
+			var orderId = sectionId;
+			var refreshId = sectionId + SECTIONREFRESH 
+			html = '<span id="' + refreshId + '">' + html + '</span>'		
+			TOC[orderId] = {'target': id, 'title':  title};
+			MAIN[orderId] = {'id': id, 'title': title, 'refreshHtml': html, 'refreshId': refreshId, 'longContent': true,
+				'html': html};
+		}
+		
 		//////////////////////////////////////////////////////////////////////
 		//sectionTable Functions
 		//////////////////////////////////////////////////////////////////////
@@ -1851,25 +2480,28 @@ function parseData() {
 			var orderId = sectionId;
 			var tableSectionId = sectionId + 'display';
 			var subTitle = sectionTables[sectionId].subTitle()
-			var html = formatTableData(subTitle, tableSectionId);
+			var refreshId = sectionId + SECTIONREFRESH 
+			var html = formatTableData(subTitle, refreshId, tableSectionId);
 			if (! html) {
 				return;
 			}
 			TOC[orderId] = {'target': id, 'title':  title};
 			MAIN[orderId] = {'id': id, 'title': title, 'longContent': true,
-				'html': html, 'dataSetTblSection': tableSectionId, 'function': constructTable, 'functionPar':  [sectionId, sectionTables[sectionId].dataSet, sectionTables[sectionId].dataSetHeader, tableSectionId]};
+				'html': html, 'refreshHtml': subTitle, 'refreshId': refreshId,
+				'dataSetTblSection': tableSectionId, 'function': constructTable, 
+				'functionPar':  [sectionId, sectionTables[sectionId].dataSet, sectionTables[sectionId].dataSetHeader, tableSectionId]};
 		}
 		
 		
 		//Function used by sections to create HTML To display table
-		function formatTableData(subText, tableId) {
+		function formatTableData(subText, refreshId, tableId) {
 			//Used by sections above if a table is required in there HTML
 			var html = '';
 			
 			html += '<table id="' + tableId + '" class="display" width="100%"></table>'
 
 			if (html) {
-				return subText + '<p><div id="headerExport"></div></p>' + html ;
+				return '<span id="' + refreshId + '">' + subText + '</span><p><div id="headerExport"></div></p>' + html ;
 			}
 			else {
 				return '';
@@ -1878,13 +2510,10 @@ function parseData() {
 
 
 	}
-	
-}
+}	
 
 
-	
 
-	
 if (debug) console.log('debug 99');	
 });
 </script>	
@@ -2008,16 +2637,8 @@ ul.padded > li {
 a.dt-button.columnGroupButton {
 	color: orange;
 }
- 
-a.dt-button.tranformButton {
-	color: orange;
-}
 
-a.dt-button.removeUserButton {
-	color: orange;
-}
-
-a.dt-button.changeLeaderButton {
+a.dt-button.messageUserButton {
 	color: orange;
 }
 
@@ -2239,8 +2860,8 @@ ul#tableOfContents > li {
 </style>
 </head>
 <body><div id="innerBody">	
-<h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.1)</span></h1><!-- VERSION TOGGLE -->
+<h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.2)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -2273,7 +2894,27 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
-        <dt>0.1 - beta release <span class="date">2016-12-12</span></dt>
+        <dt>0.2 - update of code release <span class="date">2017-03-30</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Upgrading code as per changes to Party And Guild Data Tool</li>
+					<li class="subheading">Random Winner (Placeholder)</li>
+					<li class="subheading">Leadership Tools</li>
+					<li class="subheading">Chat Export with System Messages</li>
+					<li class="subheading">Member Overall Completion</li>
+					<li class="subheading">Member per Task Completion</li>
+					<li class="subheading">All Task Completion History</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+                    <li>Possible Future Features updated</li>
+                    <li>Help and Contact Details updated</li>
+                </ul>
+            </li>		
+		</ul></dd>
+		<dt>0.1 - beta release <span class="date">2016-12-12</span></dt>
         <dd><ul>
             <li>Features:
                 <ul>
@@ -2318,13 +2959,13 @@ ul#tableOfContents > li {
              -&gt; API page</a>)
             </legend>
             <label for="userId"><span>User ID</span>
-                <input type="text" name="userId" id="userId"  />
+                <input type="text" name="userId" id="userId" />
             </label>
             <label for="apiToken"><span>API Token</span>
-                <input type="password" name="apiToken" id="apiToken"  />
+                <input type="password" name="apiToken" id="apiToken" />
             </label>
 			<label for="challengeId"><span>Challenge ID</span>
-                <input type="text" name="challengeId" id="challengeId"  />
+                <input type="text" name="challengeId" id="challengeId" />
             </label>
 			<div id="exportOptionSelector"></div>
             <input type="submit" value="Fetch Group Data" />
@@ -2364,11 +3005,11 @@ ul#tableOfContents > li {
 		
 		<h2>Possible Future Features</h2>
 		<ul>
-			<li>Mammonth Task/Member details</li>
-			<li>Habit/Dailies/To-Dos based completion by member</li>
-			<li>Chat / PM per member with completed tasks</li>
 			<li>Overall Challenge Stats (for Guild Versus Guild)</li>
-			<li>Awarding of Gems and Winner</li>
+			<li>Picking a Random Winner and showing all the stats</li>
+			<li>Awarding of Gems and Winner through Leadership Tool and Random Winner</li>
+			<li>Likes in Chat</li>
+			<li>Activity showing challenge information</li>
 		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
@@ -2380,13 +3021,13 @@ ul#tableOfContents > li {
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
 		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica.</p>
 
-	   <h2>Thank You!</h2>
-	   <p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/#/options/groups/guilds/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/#/options/groups/guilds/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
-	   
-       <h2>Help and Contact Details</h2>
-       <p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
+		<h2>Thank You!</h2>
+		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/#/options/groups/guilds/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/#/options/groups/guilds/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
 
-        <p>If you have general questions about Habitica, post them to <a href="https://habitica.com/#/options/groups/tavern">Tavern Talk</a>, <a href="https://habitica.com/#/options/groups/guilds/5481ccf3-5d2d-48a9-a871-70a7380cee5a">The Newbies Guild</a> or <a href="http://habitica.wikia.com/wiki/Board:The_Quarters_-_Q_%26_A">The Quarters - Q & A board</a>.</p>
+		<h2>Help and Contact Details</h2>
+		<p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
+		<p>Code can be source at  <a href="https://github.com/cTheDragons/Habitica-Challenge-Data-Tool">Github<a>. Contributions are welcome. As already stated, any issues please report to  <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a> for a faster response and to avoid duplication. </p>
+		<p>If you have general questions about Habitica, post them to <a href="https://habitica.com/#/options/groups/tavern">Tavern</a> or <a href="https://habitica.com/#/options/groups/guilds/5481ccf3-5d2d-48a9-a871-70a7380cee5a">Habitica Help: Ask a Question Guild</a>.</p>
     </div>
 	
 	<div id="documentationAndFormClose" class="showHideToggle closer" data-target="documentationAndForm" data-resettoggletext="documentationAndFormToggle">hide documentation / options</div>
