@@ -38,6 +38,7 @@ Contributors:
 	<script src="https://code.jquery.com/jquery-1.12.3.js"></script> <!--- jquery -->
 	<script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script> <!--- time functions -->
 	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
+	<script src="js/lodash.js"></script> <!--lodash / copy objects -->
 
 	 <!--- https://datatables.net/download/ -->
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/b-1.2.2/b-colvis-1.2.2/b-flash-1.2.2/b-html5-1.2.2/b-print-1.2.2/se-1.2.0/datatables.min.js"></script>
@@ -62,12 +63,14 @@ var membersChallenge;  // hold members of groups $$$$$
 var membersTask; //holds information per task per member
 var membersTaskHistory; //holds information per commpletion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups $$$$$
+var memberIdSelection; //holds membersIdSelection
 
 //////////////////////////////////////////////////////////////////////
 ////   Global Constants                              /////////////////
 //////////////////////////////////////////////////////////////////////
 var DOUBLEQUOTES = 		'"' //This is to make my life easier... 
 var SECTIONREFRESH = 	"SectionRefresh"
+var TABLEDISPLAYSUFFIX = '_display'
 
 var altChatGuild =		{
 							'00000000-0000-4000-A000-000000000000': {name: 'Tavern', nameAlt: 'Tavern Overflow', alt:'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'},
@@ -96,108 +99,22 @@ var dashboardToDisplay = [
 var sectionsToDisplay = [	
 	{type: 'heading', id: 'headingGroup', title: 'Challenge Details', showOnly: [], description: ''},
 		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: [], description: 'Overview of Party & Guild with Guild stats.', functionCreate: 'formatOverviewSection'},
-		{type: 'sectionCustom', id: 'randomWinner', title: 'Random Winner', showOnly: [], description: 'Picks a Random Winner', functionCreate: 'formatRandomWinnerSection'},
-		{type: 'sectionTable', id: 'leadershipTool', title: 'Leadership Tools', showOnly: ['leader'], description: 'Tools for Challenge leaders to award gems and bulk message users.'},
-	{type: 'heading', id: 'headingGroup2', title: '', showOnly: ['party'], description: ''},
-		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Exportable table of the chat from the Party & Guild. The easy way to see if your challengers posted new prompts. Or to track team work.'},
-		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild without system messages.'},
-		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild of only the system messages.'},
-	{type: 'heading', id: 'headingMember', title: 'Member Information', showOnly: [], description: ''},
 		{type: 'sectionTable', id: 'memberList', title: 'Member List', showOnly: [], description: 'A table listing profile information of each member of the group.'},
 		{type: 'sectionTable', id: 'memberActivity', title: 'Member Activity', showOnly: [], description: 'A table listing how active each member of the group is (date-hour format).'},
-		{type: 'sectionTable', id: 'memberStats', title: 'Member Stats', showOnly: [], description: 'A table listing health, mana, XP and other stats of each member.'},
-		{type: 'sectionTable', id: 'memberAttributes', title: 'Member Attributes', showOnly: [], description: 'A table listing strength, intelligence, perception and constitution of the members.'},
+		{type: 'sectionCustom', id: 'perMemberStats', title: 'Per Member Stats/Random Winner', showOnly: [], description: 'Allows the picking of a Random Winner and individually seeing each person stats', functionCreate: 'formatPerMemberStatsSection'},
 	{type: 'heading', id: 'headingMember', title: 'Completion Stats', showOnly: [], description: ''},
 		{type: 'sectionTable', id: 'membersChallenge', title: 'Member Overall Completion', showOnly: [], description: 'A table listing the summary  completion statics for each member of the challenge.'},
 		{type: 'sectionTable', id: 'membersTask', title: 'Member per Task Completion', showOnly: [], description: 'A table listing the summary completion statics for each member for each task of the challenge.'},
 		{type: 'sectionTable', id: 'membersTaskHistory', title: 'All Task Completion History', showOnly: [], description: 'A table listing the each time a task was completed for all tasks for all members.'},
+	{type: 'heading', id: 'headingGroup2', title: 'Communication', showOnly: [], description: ''},
+		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Exportable table of the chat from the Party & Guild. The easy way to see if your challengers posted new prompts. Or to track team work.'},
+		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild without system messages.'},
+		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild of only the system messages.'},
+		{type: 'sectionTable', id: 'chatLikes', title: 'Chat Likes', showOnly: [], description: 'Shows who has liked what chat message.'},
+		{type: 'sectionTable', id: 'displayInboxSection', title: 'PMs', showOnly: [], description: 'Shows PM from challenge members.'}
 ]
 
 var sectionTables =	{}
-sectionTables['leadershipTool'] = {
-	type: 'member',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
-	babyBear: {show: [1,6,12], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,6,7,8,9,12], orderBy: [[1, 'asc']]},
-	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 12 ]}],
-	subTitle: function (){
-		var html = ''
-		html += 'To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.'
-		return html 		
-	},
-	uuidIndex: 0,
-	nameIndex: 1,
-	extraButton: function(){
-	
-		var returnButton = [
-		{
-			text: 'Message User',
-			action: function ( e, dt, node, config ) {
-					var rowData = sectionTables['leadershipTool'].table.rows( { selected: true } ).data().toArray();
-					var uuidIndex = sectionTables['leadershipTool'].uuidIndex;
-					var nameIndex = sectionTables['leadershipTool'].nameIndex;
-					postMessageUser(rowData, uuidIndex, nameIndex)	
-				},
-			className: 'messageUserButton'
-		}]
-		
-		return returnButton
-	}
-}
-sectionTables['chatExport'] = {
-	type: 'chat',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
-	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
-	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
-	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
-	extraColumnDefs: [],
-	subTitle: function (){
-		var html = ''
-	
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
-		return html 
-	}
-}
-
-sectionTables['chatNotSystemExport'] = {
-	type: 'chat',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
-	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
-	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
-	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
-	extraColumnDefs: [],
-	subTitle: function (){
-		var html = ''
-		
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
-		return html 
-	}
-}
-
-sectionTables['chatSystemExport'] = {
-	type: 'chat',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'textPretty'],
-	babyBear: {show: [1,6,8], orderBy: [[6, 'desc']]},
-	mamaBear: {show: [0,1,2,3,6,8], orderBy: [[6, 'desc']]},
-	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
-	extraColumnDefs: [],
-	subTitle: function (){
-		var html = ''
-		
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
-		return html 
-	}
-}
-
 sectionTables['memberList'] = {
 	type: 'member',
 	dataSet: [], 
@@ -210,51 +127,29 @@ sectionTables['memberList'] = {
 	subTitle: function (){
 		var html = ''
 		return html 
-	}
+	},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
 }
 sectionTables['memberActivity'] = {
 	type: 'member',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
-	babyBear: {show: [1,6,12], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,6,7,8,9,12], orderBy: [[1, 'asc']]},
+	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last In Challenge', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
+	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'challengeStats.last.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
+	babyBear: {show: [1,6,7,12], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,6,7,8,9,10,12], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-center', 'targets': [ 12 ]}],
 	subTitle: function (){
 		var html = sectionHeadingLastActive()
 		return html 
-	}
-}
-sectionTables['memberStats'] = {
-	type: 'member',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last Cron', 'Health', 'Current Mana', 'Mana Max', 'Current Mana %', 'Gold', 'XP', 'XP to Next Level' ], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'lastLoggedIn.shortDate', 'stats.hpPretty', 'stats.mpPretty', 'stats.maxMPPretty', 'stats.percentageMP', 'stats.gpPretty', 'stats.expPretty', 'stats.toNextLevelPretty'],
-	babyBear: {show: [1,8,9,10], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,6,7,8,9,10,11], orderBy: [[1, 'asc']]},
-	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-right', 'targets': [8,9,10,11,12,13,14]}],
-	subTitle: function (){
-		var html = ''
-		return html 
-	}
+	},
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
 }
 
-sectionTables['memberAttributes'] = {
-	type: 'member',
-	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Last Cron', 'STR lvl', 'STR alloc', 'STR buff', 'STR gear', 'STR gear+', 'STR total', 'INT lvl', 'INT alloc', 'INT buff', 'INT gear', 'INT gear+', 'INT total',  'CON lvl', 'CON alloc', 'CON buff', 'CON gear', 'CON gear+', 'CON total', 'PER lvl', 'PER alloc', 'PER buff', 'PER gear', 'PER gear+', 'PER total'], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl', 'lastLoggedIn.shortDate', 'attributeTotals.str.lvl', 'attributeTotals.str.allocated', 'attributeTotals.str.buff', 'attributeTotals.str.gear', 'attributeTotals.str.gearBuff', 'attributeTotals.str.total', 'attributeTotals.int.lvl', 'attributeTotals.int.allocated', 'attributeTotals.int.buff', 'attributeTotals.int.gear', 'attributeTotals.int.gearBuff', 'attributeTotals.int.total', 'attributeTotals.con.lvl', 'attributeTotals.con.allocated', 'attributeTotals.con.buff', 'attributeTotals.con.gear', 'attributeTotals.con.gearBuff', 'attributeTotals.con.total', 'attributeTotals.per.lvl', 'attributeTotals.per.allocated', 'attributeTotals.per.buff', 'attributeTotals.per.gear', 'attributeTotals.per.gearBuff', 'attributeTotals.per.total'],
-	babyBear: {show: [1,2,10,16,22,28], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [1,2,3,4,10,16,22,28], orderBy: [[1, 'asc']]},
-	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-right', 'targets': [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]}],
-	subTitle: function (){
-		var html = ''
-		return html 
-	}
-}
 
 sectionTables['membersChallenge'] = {
 	type: 'member',
@@ -269,7 +164,12 @@ sectionTables['membersChallenge'] = {
 		var html = ''
 		html = 'To Do Streaks are not shown in Min/Max Streaks as Max of 1.'
 		return html 
-	}
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
 }
 sectionTables['membersTask'] = {
 	type: 'membersTask',
@@ -283,7 +183,12 @@ sectionTables['membersTask'] = {
 	subTitle: function (){
 		var html = ''
 		return html 
-	}
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
 }
 sectionTables['membersTaskHistory'] = {
 	type: 'membersTaskHistory',
@@ -298,8 +203,119 @@ sectionTables['membersTaskHistory'] = {
 		var html = ''
 		html = 'Daily completed before cron will show the cron time as the completion date. If the member is resting in the Inn no activity will be recorded.'
 		return html 
-	}	
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
 }
+sectionTables['chatExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+	
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		
+		html += 'To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.'
+		return html 
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1,2,3,4,5]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
+}
+
+sectionTables['chatNotSystemExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		return html 
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1,2,3,4,5]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1	
+}
+
+sectionTables['chatSystemExport'] = {
+	type: 'chat',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		return html 
+	}
+}
+
+sectionTables['chatLikes'] = {
+	type: 'chatLikes',
+	dataSet: [], 
+	dataSetHeader: ['Like Id', 'Like Name', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
+	dataTable: ['id', 'namePretty', 'chat.uuid', 'chat.userPretty', 'chat.contribPretty.level', 'chat.contribPretty.text', 'chat.contribPretty.contributions', 'chat.contribPretty.admin', 'chat.creation.shortDate', 'chat.timestamp', 'chat.textPretty'],
+	babyBear: {show: [1,3,8,10], orderBy: [[8, 'desc']]},
+	mamaBear: {show: [0,1,2,3,8,10], orderBy: [[8, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[8, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		
+		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		return html 
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
+}
+
+
+sectionTables['displayInboxSection'] = {
+	type: 'inbox',
+	dataSet: [], 
+	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Sent', 'Text'],
+	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'sentPretty', 'textPretty'],
+	babyBear: {show: [0,1,6,8,9], orderBy: [[6, 'desc']]},
+	mamaBear: {show: [0,1,2,3,6,8,9], orderBy: [[6, 'desc']]},
+	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
+	extraColumnDefs: [],
+	subTitle: function (){
+		var html = ''
+		return html 
+	},
+	reproduce: ['perMemberStats'],	
+	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	leadershipButton: true,
+	uuidIndex: 0,
+	nameIndex: 1
+}
+
 	
 function sectionHeadingLastActive() {	
 	var html = ''
@@ -355,6 +371,9 @@ var serverPathGroup				= '/groups' //$$$$$
 var serverPathParty				= '/groups/party'
 var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //$$$$$
 var serverPathMemberProfilePart	= '/members' //will be /members/:uid //$$$$$
+var serverMessageUser			= '/members/send-private-message'
+var serverGiftGem				= '/members/transfer-gems'
+var serverAwardChallenge		= 'selectWinner'  //will be /challenges/:challengeId/selectWinner //$$$$$
 
 var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/' 
 var imageShopPrefix             =  'shop_'
@@ -378,6 +397,7 @@ var sectionOpen = ''; // holds the ID attribute of a section of the page;
 var tellMe = '<a href="https://github.com/cTheDragons">tell me</a>';
 
 var neverDate = '1900-01-01'
+var notAvailableMember = '-Member Not In Challenge-'
 
 //////////////////////////////////////////////////////////////////////
 ////   allow Show/Hide Toggling to work    ///////////////////////////
@@ -917,7 +937,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	var privateMessageList = ''
 	var index = 0
 	var privateMessage = ''
-	
+	var loopList = []
 	
 	if (rowData.length == 0){
 		if (debug) console.log('debug no users to remove');
@@ -931,9 +951,25 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		
 		privateMessage = prompt('Please enter your private message to be sent to the users selected:\n\n' + warningMessage, optionalMessage)
 
-		for(var i = 0; i < rowData.length; i++)
+		//get UniqueRows
+		for(var i = 0; i < rowData.length; i++) {
+			notInLoop = true
+			
+			for(var j = 0; j < loopList.length; j++) {
+				if (rowData[i][uuidIndex] == loopList[j][uuidIndex]) {
+					notInLoop = false
+					break;
+				}				
+			}
+			
+			if (notInLoop) {
+				loopList.push(rowData[i])
+			}
+		}
+		
+		for(var i = 0; i < loopList.length; i++)
 		{
-			privateMessageList += '\n\u2022  ' + rowData[i][nameIndex]
+			privateMessageList += '\n\u2022  ' + loopList[i][nameIndex]
 		}
 		
 		if (privateMessage != null){
@@ -954,7 +990,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	function postNextMessageUser(){
 		$('#posting .good').show();
 		
-		obj = rowData[index]
+		obj = loopList[index]
 		var newData = {message: privateMessage, toUserId: obj[uuidIndex]}
 		urlToPost = serverUrl + serverMessageUser //+ '/' + obj[uuidIndex] + '?message=' + privateMessage
 		$('#posting #statusPost').text('Messaging ' + obj[nameIndex] );
@@ -999,7 +1035,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	}
 	
 	function postMessageUserCheckCompleted(){
-		if (index === rowData.length){
+		if (index === loopList.length){
 			$('#posting .good').hide();
 			if (debugShowObject) console.log(privateMessageList);
 			alert('The following users have been messaged:' + privateMessageList + '\n\nYour data will now be refreshed')
@@ -1011,6 +1047,210 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	
 	}
 }
+
+
+function postGiftGem(rowData, uuidIndex, nameIndex) {
+	if (debug) console.log('debug postGiftGem start');
+	var urlToPost = ''	
+	var privateMessageList = ''
+	var gemAmount = ''
+	var index = 0
+	var privateMessage = ''
+	var loopList = []
+	
+	if (rowData.length == 0){
+		if (debug) console.log('debug no users to remove');
+		alert('No row selected.\nPlease select a row before trying again.');
+		return;
+	
+	} else {
+		if (debugShowObject) console.log( rowData );
+		//Check if message to be sent
+		var optionalMessage = 'Thank You!'
+		
+		gemAmount = prompt('Please enter number of gems to send', '1')
+		if ((gemAmount != null) && (isNaN(gemAmount) == false)) {
+			privateMessage = prompt('Please enter your private message to be sent to the users selected:\n\n' + warningMessage, optionalMessage)
+
+			//get UniqueRows
+			for(var i = 0; i < rowData.length; i++) {
+				notInLoop = true
+				
+				for(var j = 0; j < loopList.length; j++) {
+					if (rowData[i][uuidIndex] == loopList[j][uuidIndex]) {
+						notInLoop = false
+						break;
+					}				
+				}
+				
+				if (notInLoop) {
+					loopList.push(rowData[i])
+				}
+			}
+			
+			for(var i = 0; i < loopList.length; i++)
+			{
+				privateMessageList += '\n\u2022  ' + loopList[i][nameIndex]
+			}
+		}
+		
+		if ((privateMessage != null) && (gemAmount != null) && (isNaN(gemAmount) == false)){
+			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to the selected users?' + privateMessageList + '\n\nThere is no undo!')){
+				privateMessageList = ''
+				postNextGiftGem()
+			} else {
+				alert('Action cancelled')
+				return;
+			}
+		} else {
+			alert('Action cancelled')
+			return;
+		}
+	}
+	
+	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	function postNextGiftGem(){
+		$('#posting .good').show();
+		
+		obj = loopList[index]
+		var newData = {message: privateMessage, toUserId: obj[uuidIndex], gemAmount: gemAmount}
+		urlToPost = serverUrl + serverGiftGem //+ '/' + obj[uuidIndex] + '?message=' + privateMessage
+		$('#posting #statusPost').text('Giving Gems to ' + obj[nameIndex] );
+		if (debugShowObject) console.log(urlToPost);
+		if (debugShowObject) console.log(newData);
+		$.ajax({
+			url: urlToPost,
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(newData),
+			dataType: 'json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+				},
+			success: postGiftGemSuccess,
+			error: postGiftGemFailure
+		});		
+	}
+		
+
+	
+	function postGiftGemFailure(UserNotFound){
+		if (debug) console.log('debug postGiftGemFailure start');
+		if (debugShowObject) console.log(UserNotFound);
+		alert('User not found ' + obj[nameIndex]  + '.\n\nPlease refetch your data and try again.');	
+		index++
+		
+		postGiftGemCheckCompleted()
+	}
+
+
+	function postGiftGemSuccess(data){
+		if (debug) console.log('debug postGiftGemSucess start');
+		$('#posting #statusPost').text('Succesfully Gifted Gems to ' + obj[nameIndex] );
+		if (debugShowObject) console.log(data);
+		privateMessageList += '\n\u2022  ' + obj[nameIndex]  
+		index++
+		
+		postGiftGemCheckCompleted()
+	}
+	
+	function postGiftGemCheckCompleted(){
+		if (index === loopList.length){
+			$('#posting .good').hide();
+			if (debugShowObject) console.log(privateMessageList);
+			alert('The following users have been gifted ' + gemAmount + ' gem(s) with the message:' + privateMessageList + '\n\nYour data will now be refreshed')
+			fetchData() 
+		} else
+		{
+			postNextGiftGem()
+		}		
+	
+	}
+}	
+
+
+function postAwardChallenge(rowData, uuidIndex, nameIndex) {
+	if (debug) console.log('debug postAwardChallenge start');
+	var urlToPost = ''	
+	var index = 0
+	var privateMessage = ''
+	var loopList = []
+	
+	if (rowData.length == 0){
+		if (debug) console.log('debug no users to remove');
+		alert('No row selected.\nPlease select a row before trying again.');
+		return;
+	
+	} else if (rowData.length > 1) {
+		if (debug) console.log('debug too many leaders');
+		alert('Too many row selected.\nPlease select a single row before trying again.');
+		return;
+	} else {
+		if (debugShowObject) console.log( rowData );
+
+		if (confirm('Are you sure to award the challege to ' + rowData[0][nameIndex] + '\nAND\nclose the challenge?\n\nThere is no undo!')){
+			obj = rowData[0]
+			//newData['_id'] = groupId
+			//newData['id'] = groupId
+			//newData['leader'] = {}
+			//newData.leader['id'] = obj[uuidIndex]
+			//newData.leader['_id'] = obj[uuidIndex]
+			loopList = rowData
+			postNextAwardChallenge()
+		} else {
+			alert('Action cancelled')
+			return;
+		}
+	}
+	
+	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	function postNextAwardChallenge(){
+		$('#posting .good').show();
+		
+		obj = loopList[index]
+		//var newData = {message: privateMessage, toUserId: obj[uuidIndex], gemAmount: gemAmount}
+		urlToPost = serverUrl + serverPathChallenge + '/' + challengeId + '/' + serverAwardChallenge + '/' + obj[uuidIndex]
+		$('#posting #statusPost').text('Awarding Challenge to ' + obj[nameIndex] );
+		if (debugShowObject) console.log(urlToPost);
+		$.ajax({
+			url: urlToPost,
+			type: 'POST',
+			contentType: 'application/json',
+			cache: false,
+			beforeSend: function(xhr){
+					xhr.setRequestHeader('x-api-user', userId);
+					xhr.setRequestHeader('x-api-key',  apiToken);
+				},
+			success: postAwardChallengeSuccess,
+			error: postAwardChallengeFailure
+		});		
+	}
+		
+
+	
+	function postAwardChallengeFailure(UserNotFound){
+		if (debug) console.log('debug postAwardChallengeFailure start');
+		if (debugShowObject) console.log(UserNotFound);
+		alert('User not found ' + obj[nameIndex]  + '.\n\nPlease refetch your data and try again.');	
+		
+		fetchdata()
+		
+	}
+
+
+	function postAwardChallengeSuccess(data){
+		if (debug) console.log('debug postAwardChallengeSucess start');
+		$('#posting #statusPost').text('Succesfully Awarded ' + obj[nameIndex] );
+		if (debugShowObject) console.log(data);
+		$('#posting #statusPost').text('Challenge has closed.' );
+		alert('The user ' + obj[nameIndex] + ' has been awarded the challenge. \n\nThe challenge has now closed')
+		
+	    window.location.reload(false); 
+		
+	}
+}	
 	
 function parseData() {
 	if (debug) console.log('debug parseData start');
@@ -1045,7 +1285,7 @@ function parseData() {
 	
 	if ($('#MAIN')[0].innerHTML.length > 1) {
 		//Keep previous table settings
-		refreshAndDisplayMAIN();
+		refreshAndDisplayMAIN([]);
 	} else {
 		formatAndDisplayMAIN();
 	}
@@ -1056,7 +1296,7 @@ function parseData() {
 		var valueToDisplay = ''
 		
 		$.each(dashboardToDisplay, function(index, obj){
-			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
 				var data = obj;
 				
 				var classes = (data.hidden) ? 'hide' : '';
@@ -1095,7 +1335,7 @@ function parseData() {
 		
 		$.each(sectionsToDisplay, function(index, obj){
 			keyToAdd=''
-			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
 				if (obj.type != 'heading'){
 					keyToAdd = obj.id
 				} else {
@@ -1138,7 +1378,7 @@ function parseData() {
 		
 		$.each(sectionsToDisplay, function(index, obj){
 			keyToAdd=''
-			if (obj.showOnly == '' || (obj.showOnly == 'party' && groupId == 'party') || (obj.showOnly == 'leader' && userId == group.leader.id)){
+			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
 				keyToAdd = obj.id
 				if (obj.type == 'heading') keyToAdd = ''
 				if (keyToAdd != '') keys.push(keyToAdd)
@@ -1183,16 +1423,21 @@ function parseData() {
 		}
 	}
 	
-function refreshAndDisplayMAIN() {
+	function refreshAndDisplayMAIN(sectionToRefresh) {
 		// Not required to be changed. Section controlled by Sections defined above.
 		var keys = [];
 		var keyToAdd = ''
 		
 		$.each(sectionsToDisplay, function(index, obj){
 			keyToAdd=''
-			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') == true && groupId == 'party') || (obj.showOnly.includes('leader') == true && userId == group.leader.id)) {
+			if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
 				keyToAdd = obj.id
 				if (obj.type == 'heading') keyToAdd = ''
+				if (sectionToRefresh.length != 0) {
+					$.each(sectionToRefresh, function(index2, obj2){
+						if (obj.id.startsWith(obj2) == false) keyToAdd = ''
+					});
+				}
 				if (keyToAdd != '') keys.push(keyToAdd)
 			}
 		});
@@ -1357,12 +1602,12 @@ function refreshAndDisplayMAIN() {
 				formattedTableHeader.push({'title': obj, 'classname': dataSetTableSection + '_' + obj.replace(/ /g, ''),  'defaultContent': ''})
 			});
 			
-			if (debugShowObject) console.log(formattedTableHeader);
+			//if (debugShowObject) console.log(formattedTableHeader);
 			
 			
 			showButtons = formatShowButton()
 			
-			if (debugShowObject) console.log(showButtons);
+			//if (debugShowObject) console.log(showButtons);
 
 			allColumnDefs = [
 				{ targets: defaultShow, visible: true},
@@ -1423,8 +1668,8 @@ function refreshAndDisplayMAIN() {
 			defaultShow = showOptions[exportOption]
 			defaultOrderBy = eval('sectionTables[dataSetSectionId].' + exportOption + '.orderBy')
 			
-			if (debugShowObject) console.log(showOptions);		
-			if (debugShowObject) console.log(hideOptions);	
+			//if (debugShowObject) console.log(showOptions);		
+			//if (debugShowObject) console.log(hideOptions);	
 		
 			returnButtons = [
 				 'pageLength', 
@@ -1492,6 +1737,46 @@ function refreshAndDisplayMAIN() {
 				}
 			]
 			
+			//Leadership buttons
+			if ((sectionTables[dataSetSectionId].leadershipButton) && (userId == challenge.leader.id)){
+				var leadershipButton = [
+					{
+						text: 'Award Challenge',
+						action: function ( e, dt, node, config ) {
+								var rowData = sectionTables[dataSetSectionId].table.rows( { selected: true } ).data().toArray();
+								var uuidIndex = sectionTables[dataSetSectionId].uuidIndex;
+								var nameIndex = sectionTables[dataSetSectionId].nameIndex;
+								postAwardChallenge(rowData, uuidIndex, nameIndex)	
+							},
+						className: 'awardChallengeButton'
+					},
+					{
+						text: 'Gift Gems',
+						action: function ( e, dt, node, config ) {
+								var rowData = sectionTables[dataSetSectionId].table.rows( { selected: true } ).data().toArray();
+								var uuidIndex = sectionTables[dataSetSectionId].uuidIndex;
+								var nameIndex = sectionTables[dataSetSectionId].nameIndex;
+								postGiftGem(rowData, uuidIndex, nameIndex)	
+							},
+						className: 'giftGemButton'
+					},
+					{
+						text: 'Message User',
+						action: function ( e, dt, node, config ) {
+								var rowData = sectionTables[dataSetSectionId].table.rows( { selected: true } ).data().toArray();
+								var uuidIndex = sectionTables[dataSetSectionId].uuidIndex;
+								var nameIndex = sectionTables[dataSetSectionId].nameIndex;
+								postMessageUser(rowData, uuidIndex, nameIndex)	
+							},
+						className: 'messageUserButton'
+					}
+				]
+				returnButtons = returnButtons.concat(leadershipButton)
+				selectValue = true
+			}
+			
+			
+			
 			if (sectionTables[dataSetSectionId].extraButton != undefined) {
 				var extraButton = sectionTables[dataSetSectionId].extraButton();
 				returnButtons = returnButtons.concat(extraButton)
@@ -1504,7 +1789,40 @@ function refreshAndDisplayMAIN() {
 		
 	
 	
+	function constructTable_reproduce (passPar) {
+		var sectionId = passPar[0];
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			if (obj.type == 'sectionTable'){
+				if (sectionTables[obj.id].reproduce != undefined) {
+					if (sectionTables[obj.id].reproduce.includes(sectionId)) {
+						var newSectionId = obj.id + '_' + sectionId
+						constructTable([newSectionId, sectionTables[newSectionId].dataSet, sectionTables[newSectionId].dataSetHeader, newSectionId + TABLEDISPLAYSUFFIX])
+
+					}
+				}
+			}
+		});
+	};	
 	
+	
+	function constructTable_reproduce (passPar) {
+		var sectionId = passPar[0];
+		
+		$.each(sectionsToDisplay, function(index, obj){
+			if (obj.type == 'sectionTable'){
+				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
+					if (sectionTables[obj.id].reproduce != undefined) {
+						if (sectionTables[obj.id].reproduce.includes(sectionId)) {
+							var newSectionId = sectionId  + '_' + obj.id
+							constructTable([newSectionId, sectionTables[newSectionId].dataSet, sectionTables[newSectionId].dataSetHeader, newSectionId + TABLEDISPLAYSUFFIX])
+
+						}
+					}
+				}
+			}
+		});
+	};	
 	
 	
 	//////////////////////////////////////////////////////////////////////
@@ -1569,7 +1887,11 @@ function refreshAndDisplayMAIN() {
 		return (numbers[numbers.length - 1])
 	}
 
-	
+	function getRandomInt(min, max) {
+		//based on code from https://www.w3schools.com/js/js_random.asp
+		max++ //To ensure Max can be picked
+		return Math.floor(Math.random() * (max - min)) + min;
+	}	
 	
 	//////////////////////////////////////////////////////////////////////
     ////   Collate and Display Data  					 ////////////
@@ -1583,7 +1905,7 @@ function refreshAndDisplayMAIN() {
 		//run functions to create for TOC / MAIN 
 		$.each(sectionsToDisplay, function(index, obj){
 			if (obj.type == 'sectionTable') {
-				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') == true && groupId == 'party') || (obj.showOnly.includes('leader') == true && userId == group.leader.id)) {
+				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
 					formatTableSection(obj.id, obj.title)
 				}
 			} else if (obj.type == 'sectionCustom') {
@@ -1610,6 +1932,7 @@ function refreshAndDisplayMAIN() {
 			var questRewardItem = {}; //For collating
 			var membersTask = [];
 			var membersTaskHistory = [];
+			var chatLikes = [];
 			
 			//To complete chat stats
 			var lastEphochTime = 0
@@ -1836,7 +2159,22 @@ function refreshAndDisplayMAIN() {
 					group.chatTotals.lastChat = obj.creation
 				}
 				
+				//Chat Likes
+				obj.likeCount = {}
+				obj.likeCount.total = 0
+				obj.likeCount.totalInChallenge = 0
 				
+				$.each(obj.likes, function(index2, obj2){
+					if (obj2) {
+						obj.likeCount.total++
+						if (members[index2] != undefined){
+							obj.likeCount.totalInChallenge++
+						}
+						addToArray = {};
+						addToArray = {member: members[index2], chat: obj, id: index2}
+						chatLikes.push(addToArray)
+					}
+				});
 				
 				$.each(sectionsToDisplay, function(index2, obj2){
 					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
@@ -1852,8 +2190,11 @@ function refreshAndDisplayMAIN() {
 					}
 				});
 			}); 
+			if (debugShowObject) console.log(chatLikes);
+						
 			if (debug) console.log('Finish collating chatExportSet');
 			group.chatTotals.chatDayPeriod = (Math.round((moment(group.chatTotals.lastChat.utcTime).diff(moment(group.chatTotals.firstChat.utcTime), 'hours'))/24*100)/100) 
+
 
 			
 			///////////////////////////////////////////////////////////////
@@ -1912,33 +2253,6 @@ function refreshAndDisplayMAIN() {
 					members[obj.id].attributeTotals[obj2].total = members[obj.id].attributeTotals[obj2].lvl + members[obj.id].attributeTotals[obj2].buff + members[obj.id].attributeTotals[obj2].allocated + members[obj.id].attributeTotals[obj2].gear + members[obj.id].attributeTotals[obj2].gearBuff
 				});
 				
-
-				//Determine Activity
-				if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastBuff.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime)) {
-					members[obj.id].lastActive = members[obj.id].lastTransformation.occured
-				} else if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastBuff.occured.utcTime)) {
-					members[obj.id].lastActive = members[obj.id].lastBuff.occured
-				} else if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastDropItem.utcTime)) {
-					members[obj.id].lastActive = members[obj.id].lastDropItem
-				} else if (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastLoggedIn.utcTime){
-					members[obj.id].lastActive = members[obj.id].lastLoggedIn
-				} else {
-					members[obj.id].lastActive = members[obj.id].lastChat.occured
-					}
-				
-				if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess12Hr++
-				if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess24Hr++
-				if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessWeek++
-				if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessMonth++
-				
-				if (members[obj.id].preferences.sleep == true){
-					group.memberTotals.inInn++
-
-					if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess12Hr++
-					if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess24Hr++
-					if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessWeek++
-					if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessMonth++
-				}
 
 				//Class Stats
 				group.memberTotals.class[members[obj.id].stats.classPretty]++
@@ -2092,8 +2406,37 @@ function refreshAndDisplayMAIN() {
 					addToArray = {member: members[obj.id], task: obj2}
 					membersTask.push(addToArray)
 				});
+				
+				//Determine Activity
+				if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].challengeStats.last.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastBuff.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastTransformation.occured
+				} else if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].challengeStats.last.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastBuff.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastBuff.occured.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastBuff.occured
+				} else if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].challengeStats.last.utcTime < members[obj.id].lastDropItem.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastDropItem.utcTime)) {
+					members[obj.id].lastActive = members[obj.id].lastDropItem
+				} else if ((members[obj.id].lastChat.occured.utcTime < members[obj.id].lastLoggedIn.utcTime) && (members[obj.id].challengeStats.last.utcTime <  members[obj.id].lastLoggedIn.utcTime)){
+					members[obj.id].lastActive = members[obj.id].lastLoggedIn
+				} else if (members[obj.id].lastChat.occured.utcTime < members[obj.id].challengeStats.last.utcTime){
+					members[obj.id].lastActive = members[obj.id].challengeStats.last
+				} else {
+					members[obj.id].lastActive = members[obj.id].lastChat.occured
+				}
+				
+				if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess12Hr++
+				if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLess24Hr++
+				if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessWeek++
+				if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.activeLessMonth++
+				
+				if (members[obj.id].preferences.sleep == true){
+					group.memberTotals.inInn++
+
+					if (moment().subtract(12, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess12Hr++
+					if (moment().subtract(24, 'hours').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLess24Hr++
+					if (moment().subtract(7, 'days').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessWeek++
+					if (moment().subtract(1, 'months').isBefore(members[obj.id].lastActive.utcTime)) group.memberTotals.inInn_activeLessMonth++
+				}
 						
-				tempMembersList.push(members[obj.id])
+				tempMembersList.push(obj.id)
 			}); 
 			if (debugShowObject) console.log(membersTaskHistory);
 			if (debugShowObject) console.log(membersTask);
@@ -2110,7 +2453,7 @@ function refreshAndDisplayMAIN() {
 						if (sectionTables[obj2.id].type == 'member'){
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
-								addToArray.push(eval('obj.' + obj3))
+								addToArray.push(eval('members[obj].' + obj3))
 							});
 							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2152,12 +2495,62 @@ function refreshAndDisplayMAIN() {
 					}
 				});
 			});
-
-
-
 			if (debug) console.log('Finish collating memberListSet');
+
+			///////////////////////////////////////////////////////////////
+			////   chat likes (Chat was before)					    ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(chatLikes, function(index, obj){
+				//quick fix as member function done after
+				if (members[obj.id] != undefined){
+					obj.name = members[obj.id].profile.name
+					obj.namePretty = members[obj.id].profile.namePretty
+				} else {
+					obj.name = notAvailableMember
+					obj.namePretty = notAvailableMember
+				}
+				
+				$.each(sectionsToDisplay, function(index2, obj2){
+					if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
+						if (sectionTables[obj2.id].type == 'chatLikes'){
+							addToArray = []; //clear array
+							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+								addToArray.push(eval('obj.' + obj3))
+							});
+							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+						}
+					}
+				});
+			});
+			if (debug) console.log('Finish chat Likes');
+
+			///////////////////////////////////////////////////////////////
+			////   PMs                                      ////////////
+			//////////////////////////////////////////////////////////////
+			$.each(user.inbox.messages, function(index, obj){
+				if (tempMembersList.includes(obj.uuid)){
+					modifyInboxProperties(obj);			
+					
+					$.each(sectionsToDisplay, function(index2, obj2){
+						if (obj2.type == 'sectionTable' && (obj2.showOnly.includes('party') != true || groupId == 'party')) {
+							if (sectionTables[obj2.id].type == 'inbox'){
+								addToArray = []; //clear array
+								$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
+									addToArray.push(eval('obj.' + obj3))
+								});
+								//Don't include system messages if chatNotSystemExport
+								sectionTables[obj2.id].dataSet.push(addToArray); 
+							}
+							
+						}
+					});
+				}
+			}); 
+			if (debug) console.log('Finish collating PMs');
 		};
 		
+
+
 		//////////////////////////////////////////////////////////////////////
 		////   Formatting data for data sets     ///////////////////////////
 		//////////////////////////////////////////////////////////////////////
@@ -2205,7 +2598,39 @@ function refreshAndDisplayMAIN() {
 			}
 		}
 		
-
+		function modifyInboxProperties(obj) {
+			obj.textPretty  = renderFormattedText(obj.text, {'setParaClass':'chatText'});
+			if (obj.uuid == 'system') {
+				obj.userPretty = 'System'
+			} else {
+				obj.userPretty = renderFormattedText(obj.user, {'setParaClass':'userName'});
+			}
+			obj.creation  = reformatDate(obj.timestamp);
+			//if (debugShowObject) console.log(obj);
+			if (obj.contributor.text != undefined ) {
+				obj.contribPretty = [];
+				obj.contribPretty.text = obj.contributor.text;
+				obj.contribPretty.level = obj.contributor.level;
+				obj.contribPretty.contributions = obj.contributor.contributions;
+				if (obj.contributor.admin === true) {
+					obj.contribPretty.admin = 'true'
+				} else {
+					obj.contribPretty.admin  = 'false'
+				}
+			} else {
+				obj.contribPretty = [];
+				obj.contribPretty.text = '';
+				obj.contribPretty.level = '';
+				obj.contribPretty.contributions = '';
+				obj.contribPretty.admin = '';
+			}
+			if (obj.sent === true) {
+				obj.sentPretty = 'true'
+			} else {
+				obj.sentPretty = 'false'
+			}
+		}
+		
 		function modifyUserProperties(obj) {
 			if (obj.profile !=  undefined ){
 				if (obj.profile.blurb  !=  undefined ) {
@@ -2342,6 +2767,7 @@ function refreshAndDisplayMAIN() {
 		////   Sections 										   ////////////
 		//////////////////////////////////////////////////////////////////////
 		//Custom Section functions here.
+		//With Events in the section after
 		function formatOverviewSection(sectionId, title){
 			var html = ''
 			
@@ -2463,10 +2889,81 @@ function refreshAndDisplayMAIN() {
 				'html': html};
 		}
 
-		function formatRandomWinnerSection(sectionId, title){
+		function formatPerMemberStatsSection(sectionId, title){
 			var html = ''
+			var htmlSelection = ''
+			var htmlTOC = ''
+			var htmlTableData = []
+			var htmlTablePre = ''
+			var htmlTablePost = ''
+			var htmlTablePreTOC = ''
+			var htmlTablePostTOC = ''
+			var subSectionTitle = ''
+			var subSectionId = ''
+			var htmlReturnTOC = '<a href="#' + 'toc_' + sectionId + '" target="_self">Return To Section Table of Contents</a>'
+			var rndInt
+			
+			//handle no members of challenge
+			if (memberIdSelection == undefined){
+				rndInt = getRandomInt(0, memberListToFetch.length - 1)
+				memberIdSelection = memberListToFetch[rndInt].id
+			}
+			if (debugShowObject) console.log(memberIdSelection);
+			
+			
+			
+			//Determine the HTML Data
+			var htmlTableData = formatSubTableData(sectionId, memberIdSelection, htmlReturnTOC)
+			if (debugShowObject) console.log(htmlTableData); 
+			
+			///////////////////////////////////////////////////////////////
+			////   Selection Section                               ///////
+			//////////////////////////////////////////////////////////////
+			htmlSelection += '<select class="div-togglePerMemberStats" id="togglePerMemberStats"  data-target=".showPerMemberStats">'
+			
+			$.each(memberListToFetch, function(index, obj){	
+				htmlSelection += '<option value="' + obj.id + '"'
+				if (obj.id == memberIdSelection) htmlSelection += ' selected '
+				htmlSelection += '>' + index + '. ' + members[obj.id].profile.namePretty + '</option>';
+			});		
+					
+			htmlSelection += '</select>'
+			htmlSelection +=  '<input class="div-pickRandomMember" id="pickRandomMember" type="submit" value="Pick a Random Member" />' 
+			
 
-			html +=  '<p>This is to be implemented.</p>'
+			
+			htmlTablePre += '<h2 class="div-"selectedItem_' + sectionId + '">' + members[memberIdSelection].profile.namePretty + '</h2>'
+			
+			///////////////////////////////////////////////////////////////
+			////   Profile Section                                 ///////
+			//////////////////////////////////////////////////////////////
+			subSectionId = 'MemberDetails'
+			subSectionTitle = 'Member Details'
+			htmlTablePostTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
+			htmlTablePost += '<hr class="padded" />'
+			htmlTablePost += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
+			htmlTablePost += '<p>Name: ' + members[memberIdSelection].profile.namePretty + '</p>'
+			htmlTablePost += '<p>Born: ' + members[memberIdSelection].creation.dateAndTime + '</p>'
+			htmlTablePost += '<p>Joined Challenge: ' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</p>'
+			htmlTablePost += '<p>Last Active In Challenge: ' + members[memberIdSelection].challengeStats.last.dateAndTime + '</p>'
+			htmlTablePost += '<p>Last Active: ' + members[memberIdSelection].lastActive.dateAndTime + '</p>'
+			htmlTablePost += '<p>Level/Class: Level ' + members[memberIdSelection].stats.lvl + ' ' + members[memberIdSelection].stats.classPretty + '</p>'
+			htmlTablePost += '<p>Profile:</br>' + members[memberIdSelection].blurbPretty + '</p>'
+			htmlTablePost += htmlReturnTOC 
+
+
+			htmlTOC += '<nav role="navigation" class="table-of-contents">'
+			htmlTOC += '<h3 id="' + 'toc_' + sectionId + '">Table Of Contents</h3>'
+			htmlTOC += '<ul>'
+			htmlTOC += htmlTablePreTOC
+			htmlTOC += htmlTableData[1]
+			htmlTOC += htmlTablePostTOC
+			htmlTOC += '</ul></nav>'
+			htmlTOC += '<hr/>'
+
+
+			
+			html = htmlSelection + htmlTOC + '<div class="showPerMemberStats">' + htmlTablePre + htmlTableData[0] + htmlTablePost + '</div>'
 			
 			//Finally just return the data!
 			if (! html) {
@@ -2478,8 +2975,41 @@ function refreshAndDisplayMAIN() {
 			html = '<span id="' + refreshId + '">' + html + '</span>'		
 			TOC[orderId] = {'target': id, 'title':  title};
 			MAIN[orderId] = {'id': id, 'title': title, 'refreshHtml': html, 'refreshId': refreshId, 'longContent': true,
-				'html': html};
+				'html': html, 
+				'function': constructTable_reproduce, 
+				'functionPar': [sectionId]
+			};
 		}
+		
+		///////////////////////////////////////////////////////////////////////
+		////   Custom events  for custom Sections above             //////////
+		/////////////////////////////////////////////////////////////////////
+		$(document).on('change', '.div-togglePerMemberStats', function(event){
+			var assocSectionId = 'perMemberStats'
+			if (debug) console.log('debug #showPerMemberStats (Change)');
+			memberIdSelection   = $(this).val()
+			if (debugShowObject) console.log(memberIdSelection);
+			
+			$.each(sectionsToDisplay, function(index, obj){
+				if (obj.id == assocSectionId) {
+					formatPerMemberStatsSection(obj.id, obj.title)
+					refreshAndDisplayMAIN([obj.id]);
+				}
+			});
+		});
+
+		$(document).on('click', '.div-pickRandomMember', function(event){
+			/* The user clicked on the Re-Fetch My Data button. */
+			if (debug) console.log('debug #showPerMemberStats Pick Random Number');
+			var rndInt = getRandomInt(0, memberListToFetch.length - 1)
+			memberIdSelection   = memberListToFetch[rndInt].id
+			var element = document.getElementById('togglePerMemberStats');
+			element.value = memberIdSelection;
+			 //$('#togglePerMemberStats').val(memberIdSelection); //This is said to run slowly
+			if (debugShowObject) console.log(rndInt);
+			if (debugShowObject) console.log(memberIdSelection);
+			$('.div-togglePerMemberStats').trigger('change');
+		});
 		
 		//////////////////////////////////////////////////////////////////////
 		//sectionTable Functions
@@ -2487,7 +3017,7 @@ function refreshAndDisplayMAIN() {
 		function formatTableSection(sectionId, title){
 			var id    = sectionId + 'Section';
 			var orderId = sectionId;
-			var tableSectionId = sectionId + 'display';
+			var tableSectionId = sectionId + TABLEDISPLAYSUFFIX;
 			var subTitle = sectionTables[sectionId].subTitle()
 			var refreshId = sectionId + SECTIONREFRESH 
 			var html = formatTableData(subTitle, refreshId, tableSectionId);
@@ -2497,7 +3027,7 @@ function refreshAndDisplayMAIN() {
 			TOC[orderId] = {'target': id, 'title':  title};
 			MAIN[orderId] = {'id': id, 'title': title, 'longContent': true,
 				'html': html, 'refreshHtml': subTitle, 'refreshId': refreshId,
-				'dataSetTblSection': tableSectionId, 'function': constructTable, 
+				'function': constructTable, 
 				'functionPar':  [sectionId, sectionTables[sectionId].dataSet, sectionTables[sectionId].dataSetHeader, tableSectionId]};
 		}
 		
@@ -2517,7 +3047,43 @@ function refreshAndDisplayMAIN() {
 			}
 		}
 
-
+		function formatSubTableData(sectionId, criteriaKey, htmlReturnTOC) {
+			var htmlTable = ''
+			var htmlTableTOC = ''
+			$.each(sectionsToDisplay, function(index, obj){
+				if (obj.type == 'sectionTable'){
+					if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == group.leader.id)){
+						if (sectionTables[obj.id].reproduce != undefined) {
+							if (sectionTables[obj.id].reproduce.includes(sectionId)) {
+								var newSectionId =  sectionId + '_' + obj.id 
+								sectionTables[newSectionId] = _.cloneDeep(sectionTables[obj.id])
+								sectionTables[newSectionId].dataSet = []
+								
+								$.each(exportOptions, function(index2, obj2){ 
+										$.each(sectionTables[obj.id].reproduceSel[sectionId].hide, function(index3, obj3){ 
+										
+										var indexToRemove = sectionTables[newSectionId][obj2.id].show.indexOf(obj3);
+										if (indexToRemove > -1) {
+											sectionTables[newSectionId][obj2.id].show.splice(indexToRemove, 1);
+										}
+									});
+								});
+								
+								$.each(sectionTables[obj.id].dataSet, function(index2, obj2){
+									if (obj2[sectionTables[obj.id].reproduceSel[sectionId].selection] == criteriaKey) sectionTables[newSectionId].dataSet.push(obj2)
+								});
+								htmlTableTOC += '<li><a href="#' + 'toc_' + obj.id + '_' + newSectionId  + '" target="_self">' + obj.title + '</a></li>'
+								htmlTable += '<hr class="padded" />'
+								htmlTable += '<h3 id="' + 'toc_' + obj.id + '_' + newSectionId +'">' + obj.title + '</h3>'
+								htmlTable += '<table id="' + newSectionId + TABLEDISPLAYSUFFIX + '" class="display" width="100%"></table>'
+								htmlTable += htmlReturnTOC
+							}
+						}
+					}
+				}
+			});
+			return [htmlTable, htmlTableTOC]
+		}
 	}
 }	
 
@@ -2647,10 +3213,15 @@ a.dt-button.columnGroupButton {
 	color: orange;
 }
 
+a.dt-button.awardChallengeButton {
+	color: orange;
+}
+a.dt-button.giftGemButton {
+	color: orange;
+}
 a.dt-button.messageUserButton {
 	color: orange;
 }
-
 
 
 /*********************************************************************
@@ -2866,11 +3437,13 @@ ul#tableOfContents > li {
 	text-align: center;
 	padding: 5px;
 }
+
+
 </style>
 </head>
 <body><div id="innerBody">	
 <h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.3)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.4)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -2903,6 +3476,24 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>0.4 - beta release - LIKE the rearrange? <span class="date">2017-05-09</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li class="subheading">Chat Likes</li>
+					<li class="subheading">PMs</li>
+					<li class="subheading">Per Member Stats/Random Winner</li>
+					<li>Add Likes and Participant Likes Counts to Chat Export</li>
+					<li>Added Message, Gift Gems and Award Challenge to all tables if challenge owner. (Created function as required).</li>
+					<li>Remove Leadership Tools, Member Stats, Member Attribute (Function replace and/or information not useful).</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+                    <li>Rearrange Menu headers and sections</li>
+                </ul>
+            </li>		
+		</ul></dd>
 		<dt>0.3 - beta release - Quick Fixes to avoid being a Fool! <span class="date">2017-04-01</span></dt>
         <dd><ul>
             <li>Features:
@@ -2989,13 +3580,13 @@ ul#tableOfContents > li {
              -&gt; API page</a>)
             </legend>
             <label for="userId"><span>User ID</span>
-                <input type="text" name="userId" id="userId"/>
+                <input type="text" name="userId" id="userId" />
             </label>
             <label for="apiToken"><span>API Token</span>
-                <input type="password" name="apiToken" id="apiToken"/>
+                <input type="password" name="apiToken" id="apiToken" />
             </label>
 			<label for="challengeId"><span>Challenge ID</span>
-                <input type="text" name="challengeId" id="challengeId">
+                <input type="text" name="challengeId" id="challengeId" >
             </label>
 			<div id="exportOptionSelector"></div>
             <input type="submit" value="Fetch Group Data" />
@@ -3031,21 +3622,17 @@ ul#tableOfContents > li {
 		<ul>
 			<div id="sectionDesc"></div>
 		</ul>
-		<p>><span class="subheading">FYI:</span> Last Active date is the latest date of either Cron, Chat or Drop. It does not include if the user is chatting in other areas of Habitica.</p>
+		<p>><span class="subheading">FYI:</span> Last Active date is the latest date of either Challenge Task Completion, Cron, Chat or Drop. It does not include if the user is chatting or using other areas of Habitica.</p>
 		
 		<h2>Possible Future Features</h2>
 		<ul>
-			<li>Overall Challenge Stats (for Guild Versus Guild)</li>
-			<li>Picking a Random Winner and showing all the stats</li>
-			<li>Awarding of Gems and Winner through Leadership Tool and Random Winner</li>
-			<li>Likes in Chat</li>
-			<li>Activity showing challenge information</li>
+			<li>Overall Task Completion Stats (for Guild Versus Guild)</li>
+			<li>Try to speed up the refreshing of challenger stats</li>
 		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
 		<h2>Known Bugs</h2>
 		<p>The hiding and closing of sections is a bit funky. (One day I will fix it but not today.)</p>
-		<p>Choosing a porridge option looses your current table settings. (Not sure there is much I can do there...)</p>
 
 		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
