@@ -56,14 +56,15 @@ var user;    	 // holds user's data
 var challenge;	// holds all challenge data
 var challengeTasks;	// holds all challenge data
 var group;	// holds all challenge data
-var memberListToFetch = []; //holds memberList that is fetchng (30 limit)  $$$$$
-var memberListToFetch_idOnly = []; //holds memberList that is fetchng (30 limit) $$$$$
-var members;  // hold members of groups $$$$$
-var membersChallenge;  // hold members of groups $$$$$
+var memberListToFetch = []; //holds memberList that is fetching (30 limit)  
+var memberListToFetch_idOnly = []; //holds memberList that is fetching (30 limit) 
+var members;  // hold members of challenge participants 
+var membersChallenge;  // hold members of challenge tasks 
 var membersTask; //holds information per task per member
-var membersTaskHistory; //holds information per commpletion per task per member
-var lastListMemberId = '';  // hold last member id to be used with groups $$$$$
+var membersTaskHistory; //holds information per completion per task per member
+var lastListMemberId = '';  // hold last member id to be used with groups 
 var memberIdSelection; //holds membersIdSelection
+var userIsAdmin; //holds if the user is an Admin or not
 
 //////////////////////////////////////////////////////////////////////
 ////   Global Constants                              /////////////////
@@ -341,7 +342,7 @@ function sectionHeadingLastActive() {
 			
 function sectionHeadingLeadership() {
 		html = ''
-		if (userId == challenge.leader.id) {
+		if ((userId == challenge.leader.id) || (userIsAdmin)) {
 			var userGemAmount = user.balance * 4 
 			html += '<p>Gems Owned: ' + userGemAmount + ' <img src="' + imageURL + imageGem + '" alt="' + 'Gem' + '"><br />'
 			html += 'To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.</p>'
@@ -594,9 +595,14 @@ function fetchData() {
     $('#loading .bad' ).hide();
 	
 	lastListMemberId = '' // clear from previous fetches
+	challenge = []; // clear from previous fetches
+	challengeTasks = []; // clear from previous fetches
+	group = []; // clear from previous fetches
+	memberListToFetch = [];  // clear from previous fetches
+	memberListToFetch_idOnly = []; // clear from previous fetches
 	members = []; // clear from previous fetches
 	membersChallenge = []; // clear from previous fetches
-	memberListToFetch = [];  // clear from previous fetches
+	memberIdSelection = undefined;  // clear from previous fetches
 	
 	var lastMemberIndex = 0 // clear from previous fetches
 	var lastMemberChallengeIndex = 0 // clear from previous fetches
@@ -672,15 +678,21 @@ function fetchData() {
 		console.log(ChallengeNotFound)
         if (debug) console.log('debug fetchFailure end');
     }
+	
 	function fetchUserSuccess(data) {
         if (debug) console.log('debug parseData User success start');
 		$('#loading #statusFetch').text('Fetching User Data');
         user = data.data;
 		
 		if (debugShowObject) console.log(user);
-        ajaxRunningCount--;
-
+		//Set userIsAdmin
+		userIsAdmin = false;
+		if (user.contributions != undefined) {
+			if (user.contributions.admin) userIsAdmin = true
+		}
 		
+        ajaxRunningCount--;
+	
         if (ajaxRunningCount + ajaxRunningCount_Group === 0) { // all ajax calls have finished
             fetchMemberList();
         }
@@ -1768,7 +1780,7 @@ function parseData() {
 			]
 			
 			//Leadership buttons
-			if ((sectionTables[dataSetSectionId].leadershipButton) && (userId == challenge.leader.id)){
+			if ((sectionTables[dataSetSectionId].leadershipButton) && ((userId == challenge.leader.id) || (userIsAdmin))){
 				var leadershipButton = [
 					{
 						text: 'Award Challenge',
@@ -1827,8 +1839,8 @@ function parseData() {
 				if (sectionTables[obj.id].reproduce != undefined) {
 					if (sectionTables[obj.id].reproduce.includes(sectionId)) {
 						var newSectionId = obj.id + '_' + sectionId
-						constructTable([newSectionId, sectionTables[newSectionId].dataSet, sectionTables[newSectionId].dataSetHeader, newSectionId + TABLEDISPLAYSUFFIX])
-
+						//only do it once
+						if (sectionId != newSectionId) constructTable([newSectionId, sectionTables[newSectionId].dataSet, sectionTables[newSectionId].dataSetHeader, newSectionId + TABLEDISPLAYSUFFIX])
 					}
 				}
 			}
@@ -1841,7 +1853,7 @@ function parseData() {
 		
 		$.each(sectionsToDisplay, function(index, obj){
 			if (obj.type == 'sectionTable'){
-				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == challenge.leader.id)){
+				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') ||((obj.showOnly.includes('leader') && ((userId == challenge.leader.id) || (userIsAdmin))))){
 					if (sectionTables[obj.id].reproduce != undefined) {
 						if (sectionTables[obj.id].reproduce.includes(sectionId)) {
 							var newSectionId = sectionId  + '_' + obj.id
@@ -1935,7 +1947,7 @@ function parseData() {
 		//run functions to create for TOC / MAIN 
 		$.each(sectionsToDisplay, function(index, obj){
 			if (obj.type == 'sectionTable') {
-				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == challenge.leader.id)){
+				if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || ((obj.showOnly.includes('leader') && ((userId == challenge.leader.id) || (userIsAdmin))))){
 					formatTableSection(obj.id, obj.title)
 				}
 			} else if (obj.type == 'sectionCustom') {
@@ -3123,7 +3135,7 @@ function parseData() {
 			var htmlTableTOC = ''
 			$.each(sectionsToDisplay, function(index, obj){
 				if (obj.type == 'sectionTable'){
-					if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && userId == challenge.leader.id)){
+					if (obj.showOnly.length == 0 || (obj.showOnly.includes('party') && groupId == 'party') || (obj.showOnly.includes('leader') && ((userId == challenge.leader.id) || (userIsAdmin)))){
 						if (sectionTables[obj.id].reproduce != undefined) {
 							if (sectionTables[obj.id].reproduce.includes(sectionId)) {
 								var newSectionId =  sectionId + '_' + obj.id 
@@ -3513,7 +3525,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.5)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.6)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3546,6 +3558,20 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>0.6 - beta release - Let the Mods Play! <span class="date">2017-05-13</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Allow the Mods to use the Admin Tools</li>
+				</ul> 
+            </li>
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Fixed some version history gone astray</li>
+					<li>Won't crash if fetch details change without reloading - Need to fix leadership buttons appearing though</li>
+               </ul>
+            </li>
+		</ul></dd>
 		<dt>0.5 - beta release - The Final Push <span class="date">2017-05-13</span></dt>
         <dd><ul>
             <li>Features:
@@ -3560,11 +3586,13 @@ ul#tableOfContents > li {
 					<li>Added notes about leadership buttons.</li>
 					<li>Added notes on how to select multiple rows if leadership buttons available.</li>
 					<li>Ensured all columns are right justified for numbers and dates.</li>
+					<li>Minor Typos! I'm not *positive* I have them all ;)</li>
                 </ul>
             </li>		
 	        <li>Bug Fixes:
                 <ul>
                     <li>Leadership buttons now show if your the leader of the challenge. Not the leader of the guild. (Oops!)</li>
+					<li>Rename the confusing button from Fetch Group Data to Fetch Challenge Data (Only now this is noticed! Thanks @Alys)</li>
                </ul>
             </li>
 		</ul></dd>
@@ -3583,9 +3611,7 @@ ul#tableOfContents > li {
 	        <li>Documentation:
                 <ul>
                     <li>Rearrange Menu headers and sections</li>
-					<li>Rename the confusing button from Fetch Group Data to Fetch Challenge Data (Only now this is noticed! Thanks @Alys)</li>
-					<li>Minor Typos! I'm not *positive* I have them all ;)</li>
-                </ul>
+               </ul>
             </li>		
 		</ul></dd>
 		<dt>0.3 - beta release - Quick Fixes to avoid being a Fool! <span class="date">2017-04-01</span></dt>
@@ -3730,6 +3756,7 @@ ul#tableOfContents > li {
 
 		<h2>Known Bugs</h2>
 		<p>The hiding and closing of sections is a bit funky. (One day I will fix it but not today.)</p>
+		<p>The changing of challenges without refreshing does not always work. Particular with the leadership buttons.</p>
 
 		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
