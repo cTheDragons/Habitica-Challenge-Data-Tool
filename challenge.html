@@ -65,6 +65,7 @@ var membersTaskHistory; //holds information per completion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups 
 var memberIdSelection; //holds membersIdSelection
 var userIsAdmin; //holds if the user is an Admin or not
+var newFetch; //holds if first fetch (therefore tables to be built and random member etc) is requried.
 
 //////////////////////////////////////////////////////////////////////
 ////   Global Constants                              /////////////////
@@ -388,13 +389,13 @@ var serverPathUser				= '/user';
 var serverPathChallenge			= '/challenges'
 var serverPathChallengeTasks	= '/tasks/challenge'
 
-var serverPathGroup				= '/groups' //$$$$$
+var serverPathGroup				= '/groups' //Guild associated with Challenge
 var serverPathParty				= '/groups/party'
-var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //$$$$$
-var serverPathMemberProfilePart	= '/members' //will be /members/:uid //$$$$$
+var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //challenge members
+var serverPathMemberProfilePart	= '/members' //will be /members/:uid //
 var serverMessageUser			= '/members/send-private-message'
 var serverGiftGem				= '/members/transfer-gems'
-var serverAwardChallenge		= 'selectWinner'  //will be /challenges/:challengeId/selectWinner //$$$$$
+var serverAwardChallenge		= 'selectWinner'  //will be /challenges/:challengeId/selectWinner 
 
 var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/' 
 var imageShopPrefix             =  'shop_'
@@ -408,6 +409,7 @@ var exportOption 			 	= 'babyBear';
 var exportFormat			 	= 1;
 var debug						= false;
 var debugShowObject				= false;
+
 
 if (debug || debugShowObject) serverName = '*** TURN DEBUG OFF! *** - ' + serverName
 if (debug) console.log('debug 1');
@@ -578,6 +580,9 @@ if (debug) console.log('debug #userApiDetailsForm (Login Events)');
 	if (debug) console.log('Challenge ID is ' +  challengeId);
 	challengeId = challengeId.slice(-36)
 
+	newFetch = true ; //force table to be rebuild and memberIdSelection to be repicked
+	$(document).unbind('click'); //remove random elements listeners 
+	$(document).unbind('change'); //remove random elements listeners
 	if (debug) console.log('Challenge ID is ' +  challengeId);
 	
     fetchData();
@@ -602,7 +607,6 @@ function fetchData() {
 	memberListToFetch_idOnly = []; // clear from previous fetches
 	members = []; // clear from previous fetches
 	membersChallenge = []; // clear from previous fetches
-	memberIdSelection = undefined;  // clear from previous fetches
 	
 	var lastMemberIndex = 0 // clear from previous fetches
 	var lastMemberChallengeIndex = 0 // clear from previous fetches
@@ -687,8 +691,8 @@ function fetchData() {
 		if (debugShowObject) console.log(user);
 		//Set userIsAdmin
 		userIsAdmin = false;
-		if (user.contributions != undefined) {
-			if (user.contributions.admin) userIsAdmin = true
+		if (user.contributor != undefined) {
+			if (user.contributor.admin) userIsAdmin = true
 		}
 		
         ajaxRunningCount--;
@@ -1316,13 +1320,17 @@ function parseData() {
 	formatAndDisplayDASHBOARD();
     formatAndDisplayTOC();
 
-	
-	if ($('#MAIN')[0].innerHTML.length > 1) {
+	if (newFetch) $('#MAIN')[0].innerHTML = ''
+	if (($('#MAIN')[0].innerHTML.length > 1)) {
 		//Keep previous table settings
 		refreshAndDisplayMAIN([]);
 	} else {
 		formatAndDisplayMAIN();
 	}
+	
+	//newFetch = false; //done everything now so no need to worry.
+	
+	if (debug) console.log('debug parseData finish');
  
 	function formatAndDisplayDASHBOARD() {
 		// Not required to be changed. Section controlled by Sections defined above.
@@ -1530,6 +1538,9 @@ function parseData() {
 		);
 		$('#refetch').click(function(event){
 			/* The user clicked on the Re-Fetch My Data button. */
+			newFetch = false
+			$(document).unbind('click'); //remove random elements listeners
+			$(document).unbind('change'); //remove random elements listeners
 			fetchData();
 		});
 	}
@@ -1621,11 +1632,14 @@ function parseData() {
 		
 		if (debug) console.log('debug constructTable ' + dataSetSectionId);		
 		
+		
 		if ($('#'+ dataSetTableSection)[0] == undefined) {
 			tableExists = false
 		} else {
 			if ($('#'+ dataSetTableSection)[0].rows.length == 0) tableExists = false
 		}
+
+		
 		
 		if (tableExists) {
 			if (debug) console.log ('Table exists')
@@ -2967,6 +2981,11 @@ function parseData() {
 
 		function formatPerMemberStatsSection(sectionId, title){
 			var html = ''
+			var id    = sectionId + 'Section';
+			var orderId = sectionId;
+			var refreshId = sectionId + SECTIONREFRESH 
+			var refreshHtml = ''
+			
 			var htmlSelection = ''
 			var htmlTOC = ''
 			var htmlTableData = []
@@ -2981,7 +3000,7 @@ function parseData() {
 			
 			if (challenge.memberCount > 0) {
 				//handle no members of challenge
-				if (memberIdSelection == undefined){
+				if ((memberIdSelection == undefined) || (newFetch)) {
 					rndInt = getRandomInt(0, memberListToFetch.length - 1)
 					memberIdSelection = memberListToFetch[rndInt].id
 				}
@@ -3016,17 +3035,17 @@ function parseData() {
 				//////////////////////////////////////////////////////////////
 				subSectionId = 'MemberDetails'
 				subSectionTitle = 'Member Details'
-				htmlTablePostTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
-				htmlTablePost += '<hr class="padded" />'
-				htmlTablePost += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
-				htmlTablePost += '<p>Name: ' + members[memberIdSelection].profile.namePretty + '</p>'
-				htmlTablePost += '<p>Born: ' + members[memberIdSelection].creation.dateAndTime + '</p>'
-				htmlTablePost += '<p>Joined Challenge: ' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</p>'
-				htmlTablePost += '<p>Last Active In Challenge: ' + members[memberIdSelection].challengeStats.last.dateAndTime + '</p>'
-				htmlTablePost += '<p>Last Active: ' + members[memberIdSelection].lastActive.dateAndTime + '</p>'
-				htmlTablePost += '<p>Level/Class: Level ' + members[memberIdSelection].stats.lvl + ' ' + members[memberIdSelection].stats.classPretty + '</p>'
-				htmlTablePost += '<p>Profile:</br>' + members[memberIdSelection].blurbPretty + '</p>'
-				htmlTablePost += htmlReturnTOC 
+				htmlTablePreTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
+				htmlTablePre += '<hr class="padded" />'
+				htmlTablePre += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
+				htmlTablePre += '<p>Name: ' + members[memberIdSelection].profile.namePretty + '</p>'
+				htmlTablePre += '<p>Born: ' + members[memberIdSelection].creation.dateAndTime + '</p>'
+				htmlTablePre += '<p>Joined Challenge: ' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</p>'
+				htmlTablePre += '<p>Last Active In Challenge: ' + members[memberIdSelection].challengeStats.last.dateAndTime + '</p>'
+				htmlTablePre += '<p>Last Active: ' + members[memberIdSelection].lastActive.dateAndTime + '</p>'
+				htmlTablePre += '<p>Level/Class: Level ' + members[memberIdSelection].stats.lvl + ' ' + members[memberIdSelection].stats.classPretty + '</p>'
+				htmlTablePre += '<p>Profile:</br>' + members[memberIdSelection].blurbPretty + '</p>'
+				htmlTablePre += htmlReturnTOC 
 
 
 				htmlTOC += '<nav role="navigation" class="table-of-contents">'
@@ -3038,26 +3057,23 @@ function parseData() {
 				htmlTOC += '</ul></nav>'
 				htmlTOC += '<hr/>'
 
-
-				
-				html = htmlSelection + htmlTOC + '<div class="showPerMemberStats">' + htmlTablePre + htmlTableData[0] + htmlTablePost + '</div>'
+	
 			} else {
-				html = 'No partipants in challenge'
+				htmlTablePre = 'No partipants in challenge'
 				
 				//Determine the HTML Data -- Need to generate so it does not error.
 				var htmlTableData = formatSubTableData(sectionId, memberIdSelection, htmlReturnTOC)
 				if (debugShowObject) console.log(htmlTableData); 
 			}
 			//Finally just return the data!
-			if (! html) {
+			if (!(htmlSelection + htmlTOC + htmlTablePre + htmlTableData[0])) {
 				return;
 			} 
-			var id    = sectionId + 'Section';
-			var orderId = sectionId;
-			var refreshId = sectionId + SECTIONREFRESH 
-			html = '<span id="' + refreshId + '">' + html + '</span>'		
+			html = '<span id="' + refreshId + '">' + htmlSelection + htmlTOC + htmlTablePre + '</span>'	+ htmlTableData[0] 	
+			refreshHtml = htmlSelection + htmlTOC + htmlTablePre
+			
 			TOC[orderId] = {'target': id, 'title':  title};
-			MAIN[orderId] = {'id': id, 'title': title, 'refreshHtml': html, 'refreshId': refreshId, 'longContent': true,
+			MAIN[orderId] = {'id': id, 'title': title, 'refreshHtml': refreshHtml, 'refreshId': refreshId, 'longContent': true,
 				'html': html, 
 				'function': constructTable_reproduce, 
 				'functionPar': [sectionId]
@@ -3070,6 +3086,7 @@ function parseData() {
 		$(document).on('change', '.div-togglePerMemberStats', function(event){
 			var assocSectionId = 'perMemberStats'
 			if (debug) console.log('debug #showPerMemberStats (Change)');
+			newFetch = false
 			memberIdSelection   = $(this).val()
 			if (debugShowObject) console.log(memberIdSelection);
 			
@@ -3079,6 +3096,7 @@ function parseData() {
 					refreshAndDisplayMAIN([obj.id]);
 				}
 			});
+			if (debug) console.log('finish #showPerMemberStats (Change)');
 		});
 
 		$(document).on('click', '.div-pickRandomMember', function(event){
@@ -3092,6 +3110,7 @@ function parseData() {
 			if (debugShowObject) console.log(rndInt);
 			if (debugShowObject) console.log(memberIdSelection);
 			$('.div-togglePerMemberStats').trigger('change');
+			if (debug) console.log('finish #showPerMemberStats Pick Random Number');
 		});
 		
 		//////////////////////////////////////////////////////////////////////
@@ -3525,7 +3544,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.6)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.7)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3558,6 +3577,17 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>0.7 - beta release - Kill the Bug! <span class="date">2017-05-13</span></dt>
+        <dd><ul>
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Re-fetching won't loose your random member</li>
+					<li>Re-fetching won't cause member selection/random member to loop multiple times</li>
+					<li>Leadership tools display correctly when switching challenges</li>
+					<li>Fix issue for Mod accessing Admin Tools</li>
+               </ul>
+            </li>
+		</ul></dd>
 		<dt>0.6 - beta release - Let the Mods Play! <span class="date">2017-05-13</span></dt>
         <dd><ul>
             <li>Features:
@@ -3700,7 +3730,7 @@ ul#tableOfContents > li {
              -&gt; API page</a>)
             </legend>
             <label for="userId"><span>User ID</span>
-                <input type="text" name="userId" id="userId"/>
+                <input type="text" name="userId" id="userId" />
             </label>
             <label for="apiToken"><span>API Token</span>
                 <input type="password" name="apiToken" id="apiToken" />
@@ -3750,13 +3780,11 @@ ul#tableOfContents > li {
 		<h2>Possible Future Features</h2>
 		<ul>
 			<li>Overall Task Completion Stats (for Guild Versus Guild)</li>
-			<li>Try to speed up the refreshing of challenger stats</li>
 		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
 		<h2>Known Bugs</h2>
 		<p>The hiding and closing of sections is a bit funky. (One day I will fix it but not today.)</p>
-		<p>The changing of challenges without refreshing does not always work. Particular with the leadership buttons.</p>
 
 		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
