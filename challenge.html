@@ -10,10 +10,10 @@
 This code is licensed under the same terms as Habitica:
     https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
 
-https://github.com/Alys/tools-for-habitrpg/blob/master/habitrpg_user_data_display.html
+https://github.com/cTheDragons/Habitica-Challenge-Data-Tool
 
-https://oldgods.net/habitrpg/habitrpg_user_data_display.html
-    or http://is.gd/hrpguserdata
+https://oldgods.net/habitica/cTheDragons/challenge.html
+   
 
 Contributors:
     cTheDragons https://github.com/cTheDragons
@@ -93,7 +93,7 @@ var altChatGuild =		{
 
 //index array for looping
 var dashboardToDisplay = [
-	{id: 'memberFetch', label: 'Total Partipants', hoverText: 'Total Members in the Challenge', value: 'challenge.memberTotals.fetchCount', status: 'neutral', showOnly: []},
+	{id: 'memberFetch', label: 'Total Participants', hoverText: 'Total Members in the Challenge', value: 'challenge.memberTotals.fetchCount', status: 'neutral', showOnly: []},
 	{id: 'memberFetch', label: 'In Inn', hoverText: 'Total Members In the Inn', value: 'challenge.memberTotals.inInn', status: 'danger', showOnly: []}
 ]
 
@@ -109,11 +109,11 @@ var sectionsToDisplay = [
 		{type: 'sectionTable', id: 'membersTask', title: 'Member per Task Completion', showOnly: [], description: 'A table listing the summary completion statics for each member for each task of the challenge.'},
 		{type: 'sectionTable', id: 'membersTaskHistory', title: 'All Task Completion History', showOnly: [], description: 'A table listing the each time a task was completed for all tasks for all members.'},
 	{type: 'heading', id: 'headingGroup2', title: 'Communication', showOnly: [], description: ''},
-		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Exportable table of the chat from the Party & Guild. The easy way to see if your challengers posted new prompts. Or to track team work.'},
-		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild without system messages.'},
-		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Exportable table of the chat from the Party & Guild of only the system messages.'},
+		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Displays the chat in which the challenge was posted, or the guild where chat messages should show, ie for Tavern, the chat from Tavern Challenge OverFlow Shows'},
+		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
+		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
 		{type: 'sectionTable', id: 'chatLikes', title: 'Chat Likes', showOnly: [], description: 'Shows who has liked what chat message.'},
-		{type: 'sectionTable', id: 'displayInboxSection', title: 'PMs', showOnly: [], description: 'Shows PM from challenge members.'}
+		{type: 'sectionTable', id: 'displayInboxSection', title: 'PMs', showOnly: [], description: 'Displays personal messages you have exchanged with participants of this challenge.'}
 ]
 
 var sectionTables =	{}
@@ -139,7 +139,7 @@ sectionTables['memberActivity'] = {
 	type: 'member',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Class', 'Level', 'Tier', 'Born', 'Last Active', 'Last In Challenge', 'Last Cron', 'Last Drop', 'Last Chat', 'Total Chat Lines', 'Last Chat Text', 'In Inn'], 
-	dataTable: ['id', 'profile.namePretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'challengeStats.last.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
+	dataTable: ['id', 'profile.nameNotPretty', 'stats.classPretty', 'stats.lvl',  'contribPretty.level', 'creation.shortDate', 'lastActive.shortDate', 'challengeStats.last.shortDate', 'lastLoggedIn.shortDate', 'lastDropItem.shortDate', 'lastChat.occured.shortDate', 'lastChat.countTotal', 'lastChat.textPretty', 'preferences.sleep'],
 	babyBear: {show: [1,6,7,12], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [0,1,2,3,6,7,8,9,10,12], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
@@ -159,7 +159,7 @@ sectionTables['membersChallenge'] = {
 	type: 'member',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Joined', 'Last Cron', 'Last Active',  'First Completion',  'Latest Completion',  'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Completed', 'Total Positive Completed', 'Total Negative Completed', 'Total Not Due', 'Time Diff Min', 'Time Diff Max', 'Time Diff Min Todo', 'Time Diff Max Todo', 'Time Diff Habit', 'Time Diff Max Habit', 'Time Diff Min Daily', 'Time Diff Max Daily', 'Value Diff Min', 'Value Diff Max', 'Value Diff Min Todo', 'Value Diff Max Todo', 'Value Diff Habit', 'Value Diff Max Habit', 'Value Diff Min Daily', 'Value Diff Max Daily'], 
-	dataTable: ['id', 'profile.namePretty', 'challengeStats.joined.shortDate',  'lastLoggedIn.shortDate', 'lastActive.shortDate', 'challengeStats.first.shortDate',  'challengeStats.last.shortDate',  'challengeStats.streak.min', 'challengeStats.streak.max', 'challengeStats.streakNeg.min', 'challengeStats.streakNeg.max', 'challengeStats.count', 'challengeStats.countPostive', 'challengeStats.countNegative', 'challengeStats.countNotDue', 'challengeStats.timeDiffMin.overall', 'challengeStats.timeDiffMax.overall', 'challengeStats.timeDiffMin.todo', 'challengeStats.timeDiffMax.todo', 'challengeStats.timeDiffMin.habit', 'challengeStats.timeDiffMax.habit', 'challengeStats.timeDiffMin.daily',  'challengeStats.timeDiffMax.daily', 'challengeStats.valueDiffMin.overall', 'challengeStats.valueDiffMax.overall', 'challengeStats.valueDiffMin.todo', 'challengeStats.valueDiffMax.todo', 'challengeStats.valueDiffMin.habit', 'challengeStats.valueDiffMax.habit', 'challengeStats.valueDiffMin.daily',  'challengeStats.valueDiffMax.daily'],
+	dataTable: ['id', 'profile.nameNotPretty', 'challengeStats.joined.shortDate',  'lastLoggedIn.shortDate', 'lastActive.shortDate', 'challengeStats.first.shortDate',  'challengeStats.last.shortDate',  'challengeStats.streak.min', 'challengeStats.streak.max', 'challengeStats.streakNeg.min', 'challengeStats.streakNeg.max', 'challengeStats.count', 'challengeStats.countPostive', 'challengeStats.countNegative', 'challengeStats.countNotDue', 'challengeStats.timeDiffMin.overall', 'challengeStats.timeDiffMax.overall', 'challengeStats.timeDiffMin.todo', 'challengeStats.timeDiffMax.todo', 'challengeStats.timeDiffMin.habit', 'challengeStats.timeDiffMax.habit', 'challengeStats.timeDiffMin.daily',  'challengeStats.timeDiffMax.daily', 'challengeStats.valueDiffMin.overall', 'challengeStats.valueDiffMax.overall', 'challengeStats.valueDiffMin.todo', 'challengeStats.valueDiffMax.todo', 'challengeStats.valueDiffMin.habit', 'challengeStats.valueDiffMax.habit', 'challengeStats.valueDiffMin.daily',  'challengeStats.valueDiffMax.daily'],
 	babyBear: {show: [1,2,6,11], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [1,2,3,4,5,6,7,8,11,12,13,14,15,22,23,24], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
@@ -180,7 +180,7 @@ sectionTables['membersTask'] = {
 	type: 'membersTask',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'First Completion',  'Latest Completion',  'Reported Streak', 'Actual Current Streak', 'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Completed', 'Total Positive Completed', 'Total Negative Completed', 'Total Not Due', 'Time Diff Min', 'Time Diff Max', 'Value Diff Min', 'Value Diff Max'], 
-	dataTable: ['member.id', 'member.profile.namePretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.text', 'task.notes',  'task.creation.shortDate',  'task.challengeStats.first.shortDate',  'task.challengeStats.last.shortDate',  'task.streak', 'task.challengeStats.streak.current', 'task.challengeStats.streak.min', 'task.challengeStats.streak.max', 'task.challengeStats.streakNeg.min', 'task.challengeStats.streakNeg.max', 'task.challengeStats.count', 'task.challengeStats.countPostive', 'task.challengeStats.countNegative', 'task.challengeStats.countNotDue', 'task.challengeStats.timeDiffMin', 'task.challengeStats.timeDiffMax', 'task.challengeStats.valueDiffMin', 'task.challengeStats.valueDiffMax'],
+	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textPretty', 'task.notesPretty',  'task.creation.shortDate',  'task.challengeStats.first.shortDate',  'task.challengeStats.last.shortDate',  'task.streak', 'task.challengeStats.streak.current', 'task.challengeStats.streak.min', 'task.challengeStats.streak.max', 'task.challengeStats.streakNeg.min', 'task.challengeStats.streakNeg.max', 'task.challengeStats.count', 'task.challengeStats.countPostive', 'task.challengeStats.countNegative', 'task.challengeStats.countNotDue', 'task.challengeStats.timeDiffMin', 'task.challengeStats.timeDiffMax', 'task.challengeStats.valueDiffMin', 'task.challengeStats.valueDiffMax'],
 	babyBear: {show: [1,5,6,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
 	mamaBear: {show: [1,5,6,10,11,12,17,18,19,20,21,22], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
@@ -200,7 +200,7 @@ sectionTables['membersTaskHistory'] = {
 	type: 'membersTaskHistory',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'Completed',  'Time Diff (Hrs)',  'Value', 'Value Diff'], 
-	dataTable: ['member.id', 'member.profile.namePretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.text', 'task.notes', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
+	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textPretty', 'task.notesPretty', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
 	babyBear: {show: [1,5,6,9], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
 	mamaBear: {show: [1,2,5,6,7,9,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
@@ -221,7 +221,7 @@ sectionTables['chatExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	dataTable: ['uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
 	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
@@ -245,7 +245,7 @@ sectionTables['chatNotSystemExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	dataTable: ['uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
 	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
@@ -268,7 +268,7 @@ sectionTables['chatSystemExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Partipant Likes', 'Text'], 
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
+	dataTable: ['uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
 	babyBear: {show: [1,6,10], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8,9,10], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
@@ -286,7 +286,7 @@ sectionTables['chatLikes'] = {
 	type: 'chatLikes',
 	dataSet: [], 
 	dataSetHeader: ['Like Id', 'Like Name', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
-	dataTable: ['id', 'namePretty', 'chat.uuid', 'chat.userPretty', 'chat.contribPretty.level', 'chat.contribPretty.text', 'chat.contribPretty.contributions', 'chat.contribPretty.admin', 'chat.creation.shortDate', 'chat.timestamp', 'chat.textPretty'],
+	dataTable: ['id', 'nameNotPretty', 'chat.uuid', 'chat.userNotPretty', 'chat.contribPretty.level', 'chat.contribPretty.text', 'chat.contribPretty.contributions', 'chat.contribPretty.admin', 'chat.creation.shortDate', 'chat.timestamp', 'chat.textPretty'],
 	babyBear: {show: [1,3,8,10], orderBy: [[8, 'desc']]},
 	mamaBear: {show: [0,1,2,3,8,10], orderBy: [[8, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[8, 'desc']]},
@@ -310,7 +310,7 @@ sectionTables['displayInboxSection'] = {
 	type: 'inbox',
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Sent', 'Text'],
-	dataTable: ['uuid', 'userPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'sentPretty', 'textPretty'],
+	dataTable: ['uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'sentPretty', 'textPretty'],
 	babyBear: {show: [0,1,6,8,9], orderBy: [[6, 'desc']]},
 	mamaBear: {show: [0,1,2,3,6,8,9], orderBy: [[6, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[6, 'desc']]},
@@ -337,7 +337,7 @@ function sectionHeadingLastActive() {
 	{
 		html += 'guild, '
 	}
-	html += 'or Last Drop. A member may be active in other areas of Habitica, for example be chatting in another guild but will not show here.</p>'
+	html += 'or Last Drop. A member may be active in other areas of Habitica, for example be chatting in another guild but that will not show here.</p>'
 	return html
 }
 			
@@ -345,8 +345,7 @@ function sectionHeadingLeadership() {
 		html = ''
 		if ((userId == challenge.leader.id) || (userIsAdmin)) {
 			var userGemAmount = user.balance * 4 
-			html += '<p>Gems Owned: ' + userGemAmount + ' <img src="' + imageURL + imageGem + '" alt="' + 'Gem' + '"><br />'
-			html += 'To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.</p>'
+			html += '<p>To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.</p>'
 		}
 		return html
 }
@@ -360,9 +359,9 @@ var exportOptions = [
 	{id: 'papaBear', shortDesc: 'Papa Bear', longDesc: 'Displays & exports max table format'}
 ];
 var exportFormats = [
-	{id: 0, shortDesc: 'Warm Porridge', longDesc: 'Displays & exports with Emoji & Text converted but HTML removed', convertMarkup: true, removeHtml: true},
-	{id: 1, shortDesc: 'Hot Porridge', longDesc: 'Displays & exports in exact Habitica HTML format', convertMarkup: true, removeHtml: false},
-	{id: 2, shortDesc: 'Cold Porridge', longDesc: 'Displays & exports in raw format', convertMarkup: false, removeHtml: false}
+	{id: 0, shortDesc: 'Warm Porridge', longDesc: 'Displays & exports with Emoji & Text converted but HTML removed', convertMarkup: true, removeHtml: true, convertLineBreaks: false},
+	{id: 1, shortDesc: 'Hot Porridge', longDesc: 'Displays & exports in exact Habitica HTML format', convertMarkup: true, removeHtml: false, convertLineBreaks: false},
+	{id: 2, shortDesc: 'Cold Porridge', longDesc: 'Displays & exports in raw format', convertMarkup: false, removeHtml: false, convertLineBreaks: true}
 ];
 
 
@@ -549,6 +548,8 @@ if (debug) console.log('debug enableShowHideToggling');
 var url_vars = getUrlVars();
 if (url_vars.uuid) {
     $("#userId").val(url_vars.uuid);
+	$("#apiToken").val(url_vars.token);
+	$("#challengeId").val(url_vars.challengeId);
 }
 function getUrlVars() {
     // Function found at http://stackoverflow.com/questions/4656843/jquery-get-querystring-from-url#answer-4656873
@@ -1198,7 +1199,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		if (index === loopList.length){
 			$('#posting .good').hide();
 			if (debugShowObject) console.log(privateMessageList);
-			alert('The following users have been gifted ' + gemAmount + ' gem(s) with the message:' + privateMessageList + '\n\nYour data will now be refreshed')
+			alert('The following users have been gifted ' + gemAmount + ' gem(s):' + privateMessageList + '\nwith message:\n' + privateMessage + '\n\nYour data will now be refreshed')
 			fetchData() 
 		} else
 		{
@@ -1524,10 +1525,18 @@ function parseData() {
 	}
 
 	function userDataInHeader() {
-		var displayName = user.profile.nameNotPretty //renderFormattedText(user.profile.name);
+		var displayName = user.profile.nameNotPretty;
+		var displayUserGemAmount = ''
+		if ((userId == challenge.leader.id) || (userIsAdmin)) {
+			var userGemAmount = user.balance * 4 
+			displayUserGemAmount = '<span id="GemsOwned">&nbsp;&nbsp;Gems Owned: ' + userGemAmount + ' <img src="' + imageURL + imageGem + '" alt="' + 'Gem' + '"></span>' 
+			
+		}
+		
 		
 		$('#headerExtras').html('<div id="userNameDisplay">' +
 				displayName +
+				displayUserGemAmount + 
 				'</div>' +
 				'<div id="explanationAndClearLinks">' +
 				'<input id="refetch" type="submit" value="' +
@@ -1555,7 +1564,7 @@ function parseData() {
 		
 		$('#headerGroupExtras').html('<div id="challengeNameDisplay">' + displayChallengeName + '</div>' +
 				'<div id="challengeHeaderDetailDisplay">' + ' Owner: ' + displayLeaderName + 
-				'&nbsp;&nbsp;&nbsp;&nbsp;Prize: ' + displayGemAmount +
+				'&nbsp;&nbsp;&nbsp;&nbsp;<span class="showHideToggle" data-target="perMemberStatsSection" data-closemainsections="true">Prize: ' + displayGemAmount + '</span>' +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Created: ' + displayCreated +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Guild: ' + displayGuildName +
 				'</div>'  
@@ -1596,11 +1605,19 @@ function parseData() {
 		return dateStr;
 	}
 
-	function renderFormattedText(text) {
+	function renderFormattedText(text, options) {
 		var md = window.habiticaMarkdown;
 		
 		if (exportFormats[exportFormat].convertMarkup) text = md.render(text);
 		if (exportFormats[exportFormat].removeHtml) text = $(text).text();
+		if (exportFormats[exportFormat].convertLineBreaks) text = text.replace(/(?:\r\n|\r|\n)/g, '<br />');
+		if (options && options.removeParaTags) {
+            text = String(text).replace(/^<p>|<\/p>\n$/g, '');
+        }
+        else if (options && options.setParaClass) {
+            text = String(text).replace(/<p>/g,
+                       '<p class="' + options.setParaClass + '">');
+        }
 		return text;
 	}
 	
@@ -2007,15 +2024,15 @@ function parseData() {
 			
 			
 			//User
-			user.profile.nameNotPretty = user.profile.name
+			user.profile.nameNotPretty = renderFormattedText(user.profile.name, {removeParaTags: true})
 			user.profile.namePretty = renderFormattedText(user.profile.name)
 			
 			//challenge
-			challenge.nameNotPretty = challenge.name
+			challenge.nameNotPretty = renderFormattedText(challenge.name, {removeParaTags: true})
 			challenge.namePretty = renderFormattedText(challenge.name)
-			challenge.leader.profile.nameNotPretty = challenge.leader.profile.name
+			challenge.leader.profile.nameNotPretty = renderFormattedText(challenge.leader.profile.name, {removeParaTags: true})
 			challenge.leader.profile.namePretty = renderFormattedText(challenge.leader.profile.name)
-			challenge.group.nameNotPretty = challenge.group.name
+			challenge.group.nameNotPretty = renderFormattedText(challenge.group.name, {removeParaTags: true})
 			challenge.group.namePretty = renderFormattedText(challenge.group.name)
 			challenge.creation = reformatDate(challenge.createdAt)
 			challenge.memberTotals = {}
@@ -2038,9 +2055,9 @@ function parseData() {
 			challenge.memberTotals.underLevel10 = 0 //to populate later
 			
 			//Group
-			group.nameNotPretty = group.name //render later without html tags?
+			group.nameNotPretty = renderFormattedText(group.name, {removeParaTags: true})
 			group.namePretty = renderFormattedText(group.name)
-			group.leader.profile.nameNotPretty = group.leader.profile.name //render later without html tags?
+			group.leader.profile.nameNotPretty = renderFormattedText(group.leader.profile.name, {removeParaTags: true})
 			group.leader.profile.namePretty = renderFormattedText(group.leader.profile.name)
 //			if (groupId == 'party')	{
 //				group.quest.inInn_memberCount = 0 //to populate later
@@ -2117,7 +2134,8 @@ function parseData() {
 					members[obj.id].challengeStats.valueDiffMax.overall_habit = undefined
 					members[obj.id].challengeStats.valueDiffMin.daily = undefined
 					members[obj.id].challengeStats.valueDiffMax.overall_daily = undefined
-/*										
+					
+					//Need to keep this although not calculated					
 					members[obj.id].lastBuff = {}
 					members[obj.id].lastBuff.occured = reformatDate(neverDate)
 					members[obj.id].lastBuff.countTotal = 0
@@ -2129,7 +2147,7 @@ function parseData() {
 					members[obj.id].lastTransformation.countTotal = 0
 					members[obj.id].lastTransformation.countLess12Hr = 0
 					members[obj.id].lastTransformation.countLess24Hr = 0
-
+/*
 					members[obj.id].quest = {}
 					members[obj.id].quest.damageTotal = 0
 					members[obj.id].quest.damageTotalCurrent = 0
@@ -2225,7 +2243,7 @@ function parseData() {
 						obj.likeCount.total++
 						if (members[index2] != undefined){
 							obj.likeCount.totalInChallenge++
-						}
+						} 
 						addToArray = {};
 						addToArray = {member: members[index2], chat: obj, id: index2}
 						chatLikes.push(addToArray)
@@ -2561,9 +2579,11 @@ function parseData() {
 				if (members[obj.id] != undefined){
 					obj.name = members[obj.id].profile.name
 					obj.namePretty = members[obj.id].profile.namePretty
+					obj.nameNotPretty = members[obj.id].profile.nameNotPretty
 				} else {
 					obj.name = notAvailableMember
 					obj.namePretty = notAvailableMember
+					obj.nameNotPretty = notAvailableMember
 				}
 				
 				$.each(sectionsToDisplay, function(index2, obj2){
@@ -2613,9 +2633,11 @@ function parseData() {
 	    function modifyChatProperties(obj) {
 			obj.textPretty  = renderFormattedText(obj.text);
 			if (obj.uuid == 'system') {
-				obj.userPretty = 'System'
+				obj.userNotPretty = 'System'
+				obj.userNotPretty = 'System'
 			} else {
-				obj.userPretty = obj.user//renderFormattedText(obj.user);
+				obj.userNotPretty = renderFormattedText(obj.user);
+				obj.userNotPretty = renderFormattedText(obj.user, {removeParaTags: true});
 			}
 			obj.creation  = reformatDate(obj.timestamp);
 			//if (debugShowObject) console.log(obj);
@@ -2657,9 +2679,11 @@ function parseData() {
 		function modifyInboxProperties(obj) {
 			obj.textPretty  = renderFormattedText(obj.text, {'setParaClass':'chatText'});
 			if (obj.uuid == 'system') {
-				obj.userPretty = 'System'
+				obj.userNotPretty = 'System'
+				obj.userNotPretty = 'System'
 			} else {
-				obj.userPretty = renderFormattedText(obj.user, {'setParaClass':'userName'});
+				obj.userNotPretty = renderFormattedText(obj.user);
+				obj.userNotPretty = renderFormattedText(obj.user, {removeParaTags: true});
 			}
 			obj.creation  = reformatDate(obj.timestamp);
 			//if (debugShowObject) console.log(obj);
@@ -2701,10 +2725,12 @@ function parseData() {
 			};
 			if (obj.id == 'system') {
 				obj.profile.namePretty = 'System'
+				obj.profile.nameNotPretty = 'System'
 				obj.profile.nameLink = 'System'
 			} else {
-				obj.profile.namePretty = obj.profile.name //renderFormattedText(obj.profile.name);
-				obj.profile.nameLink = '<a href="https://habitica.com/static/front#?memberId=' + obj.id +'" target="_blank">' + obj.profile.name + '</a>'
+				obj.profile.namePretty = renderFormattedText(obj.profile.name);
+				obj.profile.nameNotPretty = renderFormattedText(obj.profile.name, {removeParaTags: true});
+				obj.profile.nameLink = '<a href="https://habitica.com/static/front#?memberId=' + obj.id +'" target="_blank">' + obj.profile.nameNotPretty + '</a>'
 			}
 			if (obj.stats.class == 'wizard')  {
 				obj.stats.classPretty = 'mage'
@@ -2781,6 +2807,10 @@ function parseData() {
 		}
 
 		function modifyTaskProperties(obj) {
+			obj.textPretty = renderFormattedText(obj.text)
+			obj.textNotPretty = renderFormattedText(obj.text, {removeParaTags: true})
+
+			obj.notesPretty = renderFormattedText(obj.notes, {setParaClass:'taskNotes'})
 			obj.challenge.details = challengeTasks[obj.challenge.taskId]
 
 			obj.creation  = reformatDate(obj.createdAt);
@@ -2791,7 +2821,7 @@ function parseData() {
 		}
 		
 		function modifyTaskHistoryProperties(obj) {
-
+		
 			obj.datePretty  = reformatDate(obj.date);		
 			
 			//Round to 2 decimal places
@@ -2828,7 +2858,7 @@ function parseData() {
 			var html = ''
 			var htmlTOC = ''
 			var htmlTOCDetail = ''
-			var htmlReturnTOC = '<a href="#' + 'toc_' + sectionId + '" target="_self">Return To Section Table of Contents</a><hr/>'
+			var htmlReturnTOC = '<p><a href="#' + 'toc_' + sectionId + '" target="_self">Return To Section Table of Contents</a></p><hr/>'
 			var subSectionTitle = ''
 			var subSectionId = ''
 
@@ -2847,7 +2877,7 @@ function parseData() {
 			subSectionTitle = 'Member Breakdown'
 			htmlTOCDetail += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 			html += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'			
-			html += '<p>Challenge Partipants: ' +  challenge.memberTotals.fetchCount + '&nbsp;&nbsp;Total '
+			html += '<p>Challenge Participants: ' +  challenge.memberTotals.fetchCount + '&nbsp;&nbsp;'
 			if (groupId == 'party') {
 				html +=  'Party' 
 			} else {
@@ -2865,7 +2895,7 @@ function parseData() {
 			subSectionTitle = 'Member Activity'
 			htmlTOCDetail += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 			html += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'			
-			html += '<p>Challenge Partipants: ' +  challenge.memberTotals.fetchCount + '&nbsp;&nbsp;Total '
+			html += '<p>Challenge Participants: ' +  challenge.memberTotals.fetchCount + '&nbsp;&nbsp;Total '
 			html += '<p><table class=overview_memberActivity>' + 
 						'<tr><th></th><th>Active < 12 hr</th><th>Active 12 hr < 24 hr</th><th>Active 24 hr < 1 wk</th><th>Active 1 wk < 1 mth</th><th>Active > 1 month</th></tr>' +
 						'<tr><th>Overall</th><td>' + challenge.memberTotals.activeLess12Hr + '</td><td>' + (challenge.memberTotals.activeLess24Hr - challenge.memberTotals.activeLess12Hr) + '</td><td>' + (challenge.memberTotals.activeLessWeek - challenge.memberTotals.activeLess24Hr) + '</td><td>' + (challenge.memberTotals.activeLessMonth - challenge.memberTotals.activeLessWeek) + '</td><td>' + (challenge.memberTotals.fetchCount - challenge.memberTotals.activeLessMonth) + '</td></tr>' +
@@ -2889,10 +2919,10 @@ function parseData() {
 			
 			if (group.logo != undefined && group.logo != '') html += '<img src="' + group.logo + '" align=right></img>'
 			if (group.description != undefined) html += '<h3>Description</h3><p>' + renderFormattedText(group.description) + '</p>'
-			if (group.leaderMessage != undefined) html += '<h3>Leader Note</h3><p>' + renderFormattedText(group.leaderMessage) + '</p>'
-			html += '<h3>Leader</h3><p>' + group.leader.profile.namePretty //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
+			if (group.leaderMessage != undefined) html += '<h3>Leader Message</h3><p>' + renderFormattedText(group.leaderMessage) + '</p>'
+			html += '<h3>Leader</h3><p>' + group.leader.profile.nameNotPretty //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
 			html += htmlReturnTOC
-			
+/*			
 			//Chat
 			subSectionId = 'ChatBreakdown'
 			subSectionTitle = 'Chat Breakdown'
@@ -2955,7 +2985,7 @@ function parseData() {
 				html +=  '<p>It appears a vow of silence has been taken, as there is no chat to report on.</p>'
 			}
 			html += htmlReturnTOC
-			
+*/			
 
 			htmlTOC += '<nav role="navigation" class="table-of-contents">'
 			htmlTOC += '<h3 id="' + 'toc_' + sectionId + '">Table Of Contents</h3>'
@@ -3020,7 +3050,7 @@ function parseData() {
 				$.each(memberListToFetch, function(index, obj){	
 					htmlSelection += '<option value="' + obj.id + '"'
 					if (obj.id == memberIdSelection) htmlSelection += ' selected '
-					htmlSelection += '>' + index + '. ' + members[obj.id].profile.namePretty + '</option>';
+					htmlSelection += '>' + index + '. ' + members[obj.id].profile.nameNotPretty + '</option>';
 				});		
 						
 				htmlSelection += '</select>'
@@ -3028,7 +3058,7 @@ function parseData() {
 				
 
 				
-				htmlTablePre += '<h2 class="div-"selectedItem_' + sectionId + '">' + members[memberIdSelection].profile.namePretty + '</h2>'
+				htmlTablePre += '<h2 class="div-"selectedItem_' + sectionId + '">' + members[memberIdSelection].profile.nameNotPretty + '</h2>'
 				
 				///////////////////////////////////////////////////////////////
 				////   Profile Section                                 ///////
@@ -3038,7 +3068,7 @@ function parseData() {
 				htmlTablePreTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 				htmlTablePre += '<hr class="padded" />'
 				htmlTablePre += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
-				htmlTablePre += '<p>Name: ' + members[memberIdSelection].profile.namePretty + '</p>'
+				htmlTablePre += '<p>Name: ' + members[memberIdSelection].profile.nameNotPretty + '</p>'
 				htmlTablePre += '<p>Born: ' + members[memberIdSelection].creation.dateAndTime + '</p>'
 				htmlTablePre += '<p>Joined Challenge: ' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</p>'
 				htmlTablePre += '<p>Last Active In Challenge: ' + members[memberIdSelection].challengeStats.last.dateAndTime + '</p>'
@@ -3059,7 +3089,7 @@ function parseData() {
 
 	
 			} else {
-				htmlTablePre = 'No partipants in challenge'
+				htmlTablePre = 'No Participants in challenge'
 				
 				//Determine the HTML Data -- Need to generate so it does not error.
 				var htmlTableData = formatSubTableData(sectionId, memberIdSelection, htmlReturnTOC)
@@ -3379,6 +3409,15 @@ h2 {
     font-size: 2em;
     margin-bottom: 10px;
 }
+#userNameDisplay {
+    text-align: right;
+    font-weight: bold;
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+#GemsOwned {
+    font-size: 0.5em;
+}
 
 #challengeNameDisplay {
     text-align: left;
@@ -3544,7 +3583,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.7)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.8)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3562,7 +3601,7 @@ ul#tableOfContents > li {
 			<li>Check your challenge id is a Challenge Id which is a string of characters similar to your UID. The Challenge ID appears at the end of the URL. Eg. 2ff9822b-27f2-4774-98da-db349b57a38e</li>
             <li>Please reload the page and then check that your <a href="https://habitica.com/#/options/settings/api">User ID and API Token</a> are correct.</li>
             <li>If you're using Internet Explorer, try another browser. <a href="https://www.google.com/intl/en/chrome/browser/">Chrome</a> or <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a> will be more reliable.</li>
-            <li>If the page's URL starts with "http://" change it to start with "https://" (or just use <a href="https://oldgods.net/habitrpg/habitrpg_user_data_display.html">this correct link</a>).</li>
+            <li>If the page's URL starts with "http://" change it to start with "https://" (or just use <a href="https://oldgods.net/habitica/cTheDragons/challenge.html">this correct link</a>).</li>
             <li>If neither of those help, contact me! See <strong>"Help and Contact Details"</strong> at the bottom of this page.</li>
         </ul>
     </div>
@@ -3577,6 +3616,33 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>0.8 - beta release - Are We There Yet? <span class="date">2017-05-29</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Names now render with markdown based on porridge option.</li>
+					<li>Prize at the top links to Select Winner. (Thank you @Accio Books!)</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+                    <li>Minor text change re member activity.</li>
+					<li>Update to chat and PM Descriptions. (Thank you @Lorem)</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Allowed to Party challenges to be viewed. (Zero missing data for buffs/Transformation activity even though not calculated) (Thank you @Lalaitha)</li>
+					<li>Pretty names for tasks</li>
+					<li>Pretty names for challenges</li>
+					<li>Gem gifting message now shows message sent. (Thank you @mandiferous)</li>
+					<li>Removed incorrect references to the Data Display Tool. (Thank you @Alys)</li>
+					<li>Cold porridge now shows carriage returns.</li>
+					<li>Typo Partipants => Participants</li>
+					<li>Minor formatting issues in Overview.</li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>0.7 - beta release - Kill the Bug! <span class="date">2017-05-13</span></dt>
         <dd><ul>
 	        <li>Bug Fixes:
@@ -3730,18 +3796,18 @@ ul#tableOfContents > li {
              -&gt; API page</a>)
             </legend>
             <label for="userId"><span>User ID</span>
-                <input type="text" name="userId" id="userId" />
+                <input type="text" name="userId" id="userId"/>
             </label>
             <label for="apiToken"><span>API Token</span>
-                <input type="password" name="apiToken" id="apiToken" />
+                <input type="password" name="apiToken" id="apiToken"/>
             </label>
 			<label for="challengeId"><span>Challenge ID</span>
-                <input type="text" name="challengeId" id="challengeId" />
+                <input type="text" name="challengeId" id="challengeId"/>
             </label>
 			<div id="exportOptionSelector"></div>
             <input type="submit" value="Fetch Challenge Data" />
 			<p class="highlight">Challenge ID:</p>
-			<p>Enter either the Challenge ID, or the URL for the Challenge. The Challenge ID is a string of characters similar to your User ID, e.g. 2ff9822b-27f2-4774-98da-db349b57a38e. The Challenge ID appears at the end of the URL or on the left hand panel on the website. It is not the name of the guild. You can always just post the entire URL, which is much easier!</p>
+			<p>Enter either the Challenge ID, or the URL for the Challenge. The Challenge ID is a string of characters similar to your User ID, e.g. 2ff9822b-27f2-4774-98da-db349b57a38e. The Challenge ID appears at the end of the URL or on the left hand panel on the website. It is not the name of the challenge. You can always just post the entire URL, which is much easier!</p>
 			<div id="exportOptionDesc"></div>
             <p class="highlight">Privacy and security notes:</p>
             <ul>
@@ -3779,7 +3845,8 @@ ul#tableOfContents > li {
 
 		<h2>Possible Future Features</h2>
 		<ul>
-			<li>Overall Task Completion Stats (for Guild Versus Guild)</li>
+			<li>Overall Task Completion Stats (for Guild Versus Guild).</li>
+			<li>Give a selection list of challenges that user owns.</li>
 		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
