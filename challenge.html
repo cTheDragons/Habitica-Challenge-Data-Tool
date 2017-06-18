@@ -123,8 +123,8 @@ var sectionTables =	{}
 sectionTables['memberList'] = {
 	type: 'member',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Mod',  'Born', 'Next Birthday', 'Can PM?'],
-	dataTable: ['id', 'profile.nameLink', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin',  'creation.shortDate',  'creation.nextBirthday.shortDate', 'inbox.canPM'],
+	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Mod',  'Born', 'Next Birthday', 'Can PM?', 'User (Plain)'],
+	dataTable: ['id', 'profile.nameLink', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin',  'creation.shortDate',  'creation.nextBirthday.shortDate', 'inbox.canPM', 'profile.nameNotPretty'],
 	babyBear: {show: [1,3,4], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [0,1,2,3,4,5,6,10], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
@@ -136,7 +136,7 @@ sectionTables['memberList'] = {
 	},	
 	leadershipButton: true,
 	uuidIndex: 0,
-	nameIndex: 1
+	nameIndex: 12
 }
 sectionTables['memberActivity'] = {
 	type: 'member',
@@ -434,6 +434,7 @@ var challengeId 				= ''; //holds selected challenge (drop down)
 var groupId 					= ''; //holds group id from 
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
+var challengeDropDownShow		= false;
 var debug						= false;
 var debugShowObject				= false;
 
@@ -459,11 +460,13 @@ function enableShowHideToggling() {
 if (debug) console.log('debug enableShowHideToggling');
 
 	//Populate Selector
-	var html =  getExportOptionsHtml()
+	var htmlChallengeId = getChallengeSelector()
+	var htmlExport =  getExportOptionsHtml()
 	var htmlDesc =  getExportDescHtml()
 	var htmlSection = getSectionDescHtml()
 	
-	$('#exportOptionSelector').html(html)
+	$('#challengeSelector').html(htmlChallengeId)
+	$('#exportOptionSelector').html(htmlExport)
 	$('#exportOptionDesc').html(htmlDesc)
 	$('#sectionDesc').html(htmlSection)
 
@@ -508,13 +511,23 @@ if (debug) console.log('debug enableShowHideToggling');
         window.scrollTo(0, 0);
     });
 	
-	function getExportOptionsHtml()
-	{
+	function getChallengeSelector() {
+		var html = '';
+		
+		if (challengeDropDownShow == false) {
+			html +=  '<label for="challengeId"><span>Challenge ID</span>'
+			html +=  '<input type="text" name="challengeId" id="challengeId"/>'
+			html +=  '</label>'
+		}
+		
+		return html
+	}
+	
+	function getExportOptionsHtml() {
 		var html = '';
 		
 		html +=  '<label for="exportOption"><span>Column Option</span>'
 		html +=  '<select name="exportOption" id="exportOption">';
-		if (debugShowObject) console.log(exportOptions);
 		$.each(exportOptions, function(index, obj){
 			html += '<option value="' + obj.id + '"'
 			if (obj.id == exportOption) html += ' selected '
@@ -524,7 +537,6 @@ if (debug) console.log('debug enableShowHideToggling');
 
 		html +=  '<label for="exportFormat"><span>Text Format</span>'
 		html +=  '<select name="exportFormat" id="exportFormat">';
-		if (debugShowObject) console.log(exportOptions);
 		$.each(exportFormats, function(index, obj){
 			html += '<option value="' + obj.id + '"'
 			if (obj.id == exportFormat) html += ' selected '
@@ -576,7 +588,6 @@ if (debug) console.log('debug enableShowHideToggling');
 var url_vars = getUrlVars();
 if (url_vars.uuid) {
     $("#userId").val(url_vars.uuid);
-	$("#apiToken").val(url_vars.token);
 	$("#challengeId").val(url_vars.challengeId);
 }
 function getUrlVars() {
@@ -1002,7 +1013,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postMessageUser start');
 	if (debugShowObject) console.log(rowData)
 	var urlToPost = ''	
-	var privateMessageList = ''
+	var actionNotificationList = ''
 	var index = 0
 	var privateMessage = ''
 	var loopList = []
@@ -1037,12 +1048,12 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		
 		for(var i = 0; i < loopList.length; i++)
 		{
-			privateMessageList += '\n\u2022  ' + loopList[i][nameIndex]
+			actionNotificationList += '\n\u2022  ' + loopList[i][nameIndex]
 		}
 		
 		if (privateMessage != null){
-			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to the selected users?' + privateMessageList + '\n\nThere is no undo!')){
-				privateMessageList = ''
+			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to the selected users?' + actionNotificationList + '\n\nThere is no undo!')){
+				actionNotificationList = ''
 				postNextMessageUser()
 			} else {
 				alert('Action cancelled')
@@ -1054,7 +1065,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		}
 	}
 	
-	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextMessageUser(){
 		$('#posting .good').show();
 		
@@ -1097,7 +1108,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		if (debug) console.log('debug postMessageUserSucess start');
 		$('#posting #statusPost').text('Succesfully Messaged ' + obj[nameIndex] );
 		if (debugShowObject) console.log(data);
-		privateMessageList += '\n\u2022  ' + obj[nameIndex]  
+		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
 		index++
 		
 		postMessageUserCheckCompleted()
@@ -1106,8 +1117,8 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	function postMessageUserCheckCompleted(){
 		if (index === loopList.length){
 			$('#posting .good').hide();
-			if (debugShowObject) console.log(privateMessageList);
-			alert('The following users have been messaged:' + privateMessageList + '\n\nYour data will now be refreshed')
+			if (debugShowObject) console.log(actionNotificationList);
+			alert('The following users have been messaged:' + actionNotificationList + '\n\nYour data will now be refreshed')
 			fetchData() 
 		} else
 		{
@@ -1121,7 +1132,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 function postGiftGem(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postGiftGem start');
 	var urlToPost = ''	
-	var privateMessageList = ''
+	var actionNotificationList = ''
 	var gemAmount = ''
 	var index = 0
 	var privateMessage = ''
@@ -1138,7 +1149,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		var optionalMessage = 'Thank You!'
 		
 		gemAmount = prompt('Please enter number of gems to send', '1')
-		if ((gemAmount != null) && (isNaN(gemAmount) == false)) {
+		if ((gemAmount != null) && (isNaN(gemAmount) == false) && (gemAmount > 0)) {
 			privateMessage = prompt('Please enter your private message to be sent to the users selected:\n\n' + warningMessage, optionalMessage)
 
 			//get UniqueRows
@@ -1159,13 +1170,13 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 			
 			for(var i = 0; i < loopList.length; i++)
 			{
-				privateMessageList += '\n\u2022  ' + loopList[i][nameIndex]
+				actionNotificationList += '\n\u2022  ' + loopList[i][nameIndex]
 			}
 		}
 		
-		if ((privateMessage != null) && (gemAmount != null) && (isNaN(gemAmount) == false)){
-			if (confirm('Are you sure you wish to send\n\n' + privateMessage + '\n\n to the selected users?' + privateMessageList + '\n\nThere is no undo!')){
-				privateMessageList = ''
+		if ((privateMessage != null) && (gemAmount != null) && (isNaN(gemAmount) == false) && (gemAmount > 0)) {
+			if (confirm('Are you sure you wish to send ' + gemAmount + ' gems with the messasge:\n\n' + privateMessage + '\n\n to the selected users?' + actionNotificationList + '\n\nThere is no undo!')){
+				actionNotificationList = ''
 				postNextGiftGem()
 			} else {
 				alert('Action cancelled')
@@ -1177,7 +1188,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		}
 	}
 	
-	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextGiftGem(){
 		$('#posting .good').show();
 		
@@ -1220,7 +1231,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		if (debug) console.log('debug postGiftGemSucess start');
 		$('#posting #statusPost').text('Succesfully Gifted Gems to ' + obj[nameIndex] );
 		if (debugShowObject) console.log(data);
-		privateMessageList += '\n\u2022  ' + obj[nameIndex]  
+		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
 		index++
 		
 		postGiftGemCheckCompleted()
@@ -1229,8 +1240,8 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	function postGiftGemCheckCompleted(){
 		if (index === loopList.length){
 			$('#posting .good').hide();
-			if (debugShowObject) console.log(privateMessageList);
-			alert('The following users have been gifted ' + gemAmount + ' gem(s):' + privateMessageList + '\nwith message:\n' + privateMessage + '\n\nYour data will now be refreshed')
+			if (debugShowObject) console.log(actionNotificationList);
+			alert('The following users have been gifted ' + gemAmount + ' gem(s):' + actionNotificationList + '\nwith message:\n' + privateMessage + '\n\nYour data will now be refreshed')
 			fetchData() 
 		} else
 		{
@@ -1275,7 +1286,7 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		}
 	}
 	
-	//This is done like this as receive ERR_INCOMPLETE_CHUNKED_ENCODING
+	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextAwardChallenge(){
 		$('#posting .good').show();
 		
@@ -3238,16 +3249,18 @@ function parseData() {
 
 				
 				htmlTablePre += '<h2 class="div-"selectedItem_' + sectionId + '">' + members[memberIdSelection].profile.nameNotPretty 
-				htmlTablePre +=  '<input class="div-perMemberStats_awardChallenge" id="perMemberStats_awardChallenge" type="submit" value="Award Challenge" />'
-				htmlTablePre +=  '<input class="div-perMemberStats_giftGem" id="perMemberStats_giftGem" type="submit" value="Gift Gems" />'
-				htmlTablePre +=  '<input class="div-perMemberStats_messageUser" id="perMemberStats_messageUser" type="submit" value="Message User" />'
+				if ((userId == challenge.leader.id) || (userIsAdmin)) {
+					htmlTablePre +=  '<input class="div-perMemberStats_awardChallenge" id="perMemberStats_awardChallenge" type="submit" value="Award Challenge" />'
+					htmlTablePre +=  '<input class="div-perMemberStats_giftGem" id="perMemberStats_giftGem" type="submit" value="Gift Gems" />'
+					htmlTablePre +=  '<input class="div-perMemberStats_messageUser" id="perMemberStats_messageUser" type="submit" value="Message User" />'
+				}
 				htmlTablePre += '</h2>'
 				
 				///////////////////////////////////////////////////////////////
 				////   Profile Section                                 ///////
 				//////////////////////////////////////////////////////////////
 				subSectionId = 'MemberDetails'
-				subSectionTitle = 'Member Details'
+				subSectionTitle = 'Participant Details'
 				htmlTablePreTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 				htmlTablePre += '<hr class="padded" />'
 				htmlTablePre += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
@@ -3333,30 +3346,31 @@ function parseData() {
 			if (debug) console.log('finish #showPerMemberStats Pick Random Number');
 		});
 
-		$(document).on('click', '.div-perMemberStats_awardChallenge', function(event){
-			if (debug) console.log('debug #showPerMemberStats Award Challenge');
-			var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
-			var uuidIndex = 0
-			var nameIndex = 1
-			postAwardChallenge(rowData, uuidIndex, nameIndex)
-		});
+		if ((userId == challenge.leader.id) || (userIsAdmin)) {
+			$(document).on('click', '.div-perMemberStats_awardChallenge', function(event){
+				if (debug) console.log('debug #showPerMemberStats Award Challenge');
+				var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
+				var uuidIndex = 0
+				var nameIndex = 1
+				postAwardChallenge(rowData, uuidIndex, nameIndex)
+			});
 
-		$(document).on('click', '.div-perMemberStats_giftGem', function(event){
-			if (debug) console.log('debug #showPerMemberStats Gift Gems');
-			var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
-			var uuidIndex = 0
-			var nameIndex = 1
-			postGiftGem(rowData, uuidIndex, nameIndex)
-		});
+			$(document).on('click', '.div-perMemberStats_giftGem', function(event){
+				if (debug) console.log('debug #showPerMemberStats Gift Gems');
+				var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
+				var uuidIndex = 0
+				var nameIndex = 1
+				postGiftGem(rowData, uuidIndex, nameIndex)
+			});
 
-		$(document).on('click', '.div-perMemberStats_messageUser', function(event){
-			if (debug) console.log('debug #showPerMemberStats Message User');
-			var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
-			var uuidIndex = 0
-			var nameIndex = 1
-			postMessageUser(rowData, uuidIndex, nameIndex)
-		});
-		
+			$(document).on('click', '.div-perMemberStats_messageUser', function(event){
+				if (debug) console.log('debug #showPerMemberStats Message User');
+				var rowData = [[memberIdSelection, members[memberIdSelection].profile.nameNotPretty]] 
+				var uuidIndex = 0
+				var nameIndex = 1
+				postMessageUser(rowData, uuidIndex, nameIndex)
+			});
+		}
 		//////////////////////////////////////////////////////////////////////
 		//sectionTable Functions
 		//////////////////////////////////////////////////////////////////////
@@ -3816,7 +3830,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v0.9)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.0)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3849,6 +3863,26 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.0 - Public Release!<span class="date">2017-06-03</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>###</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+					<li>Further changing Member Details => Participant in Sections where it was missed</li>
+					<li>Add gems sent in confirmation message.</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Per Member stats only show leadership buttons if a leader.</li>
+					<li>Does not show HTML information if using leadership buttons in Participant List.</li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>0.9 - beta release - While the Olds Gods Slept<span class="date">2017-06-03</span></dt>
         <dd><ul>
             <li>Features:
@@ -4071,9 +4105,7 @@ ul#tableOfContents > li {
             <label for="apiToken"><span>API Token</span>
                 <input type="password" name="apiToken" id="apiToken"/>
             </label>
-			<label for="challengeId"><span>Challenge ID</span>
-                <input type="text" name="challengeId" id="challengeId"/>
-            </label>
+			<div id="challengeSelector"></div>
 			<div id="exportOptionSelector"></div>
             <input type="submit" value="Fetch Challenge Data" />
 			<p class="highlight">Challenge ID:</p>
@@ -4111,7 +4143,6 @@ ul#tableOfContents > li {
 		<p><span class="subheading">Leadership Buttons:</span> to message challenge participants, gift gems and award & close the challenge only appear if you are the challenge owner.</p>
 		<p>All dates are displayed as per users' device.</p>
 		<p><span class="subheading">FYI:</span> Last Active date is the latest date of either Challenge Task Completion, Cron, Chat or Drop. It does not include if the user is chatting or using other areas of Habitica.</p>
-		<p>All dates are displayed as per users' device.</p>
 
 		<h2>Possible Future Features</h2>
 		<ul>
