@@ -103,7 +103,7 @@ var dashboardToDisplay = [
 
 var sectionsToDisplay = [	
 	{type: 'heading', id: 'headingGroup', title: 'Challenge Details', showOnly: [], description: ''},
-		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: [], description: 'Overview of Party & Guild with Guild stats.', functionCreate: 'formatOverviewSection'},
+		{type: 'sectionCustom', id: 'overview', title: 'Overview', showOnly: [], description: 'Overview of Challenge with some challenge Stats.', functionCreate: 'formatOverviewSection'},
 		{type: 'sectionTable', id: 'memberList', title: 'Participant List', showOnly: [], description: 'A table listing profile information of each participant of the group.'},
 		{type: 'sectionTable', id: 'memberActivity', title: 'Participant Activity', showOnly: [], description: 'A table listing how active each participant of the group is (date-hour format).'},
 		{type: 'sectionCustom', id: 'perMemberStats', title: 'Per Participant Stats/Random Winner', showOnly: [], description: 'Allows the picking of a Random Winner and individually seeing each participant stats', functionCreate: 'formatPerMemberStatsSection'},
@@ -201,12 +201,12 @@ sectionTables['membersChallenge'] = {
 sectionTables['membersTask'] = {
 	type: 'membersTask',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'First Completion',  'Latest Completion',  'Reported Streak', 'Actual Current Streak', 'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Clicks', 'Positive Clicks', 'Negative Clicks', 'Total Not Due', 'Time Diff Min', 'Time Diff Max', 'Value Diff Min', 'Value Diff Max'], 
-	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textNotPretty', 'task.notesPretty',  'task.creation.shortDate',  'task.challengeStats.first.shortDate',  'task.challengeStats.last.shortDate',  'task.streak', 'task.challengeStats.streak.current', 'task.challengeStats.streak.min', 'task.challengeStats.streak.max', 'task.challengeStats.streakNeg.min', 'task.challengeStats.streakNeg.max', 'task.challengeStats.count', 'task.challengeStats.countPositive', 'task.challengeStats.countNegative', 'task.challengeStats.countNotDue', 'task.challengeStats.timeDiffMin', 'task.challengeStats.timeDiffMax', 'task.challengeStats.valueDiffMin', 'task.challengeStats.valueDiffMax'],
-	babyBear: {show: [1,5,6,10,11,12,18,19], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
-	mamaBear: {show: [1,5,6,10,11,12,17,18,19,20,21,22], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Check List', 'Task Notes', 'Created',  'First Completion',  'Latest Completion',  'Reported Streak', 'Actual Current Streak', 'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Clicks', 'Positive Clicks', 'Negative Clicks', 'Total Not Due', 'Time Diff Min', 'Time Diff Max', 'Value Diff Min', 'Value Diff Max'], 
+	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textNotPretty', 'task.checklistComp.fullListNotPretty', 'task.notesPretty',  'task.creation.shortDate',  'task.challengeStats.first.shortDate',  'task.challengeStats.last.shortDate',  'task.streak', 'task.challengeStats.streak.current', 'task.challengeStats.streak.min', 'task.challengeStats.streak.max', 'task.challengeStats.streakNeg.min', 'task.challengeStats.streakNeg.max', 'task.challengeStats.count', 'task.challengeStats.countPositive', 'task.challengeStats.countNegative', 'task.challengeStats.countNotDue', 'task.challengeStats.timeDiffMin', 'task.challengeStats.timeDiffMax', 'task.challengeStats.valueDiffMin', 'task.challengeStats.valueDiffMax'],
+	babyBear: {show: [1,5,6,11,12,13,19,20], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	mamaBear: {show: [1,5,6,11,12,13,18,19,20,21,22,23], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]}],
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]}],
 	subTitle: function (){
 		var html = ''
 		html += sectionCompletionStats()
@@ -222,12 +222,12 @@ sectionTables['membersTask'] = {
 sectionTables['membersTaskHistory'] = {
 	type: 'membersTaskHistory',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'Clicked',  'Time Diff (Hrs)',  'Value', 'Value Diff'], 
-	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textNotPretty', 'task.notesPretty', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
-	babyBear: {show: [1,5,6,9], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
-	mamaBear: {show: [1,2,5,6,7,9,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Check List', 'Task Notes', 'Created',  'Clicked',  'Time Diff (Hrs)',  'Value', 'Value Diff'], 
+	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textNotPretty', 'task.checklistComp.fullListNotPretty', 'task.notesPretty', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
+	babyBear: {show: [1,5,6,10,13], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	mamaBear: {show: [1,2,5,6,7,8,9,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,8,9,10,11,12]}],
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,9,10,11,12,13]}],
 	subTitle: function (){
 		var html = ''
 		html += sectionCompletionStats()
@@ -406,7 +406,7 @@ var warningMessage				= 	'PLEASE ENSURE YOUR MESSAGE IS:\n' +
 									'\n\u2022 meets all requirements of the Community Guidelines of Habitica (https://habitica.com/static/community-guidelines). ' +
 									'\n\u2022 meets all requirements of the Term of Service of Habitica (https://habitica.com/static/terms). ' +
 									'\n' +
-									'\nFailure to do so can lead to minor consequences like warning to severe consequences including account bans & deletions.' +
+									'\nFailure to do so can lead to minor consequences (like warnings) to severe consequences including account bans & deletions.' +
 									'\n' +
 									'\nIf you have any concerns, please email Lemoness (leslie@habitica.com) for clarification.'
 
@@ -518,12 +518,12 @@ if (debug) console.log('debug enableShowHideToggling');
 		var html = '';
 		
 		if (challengeDropDownShow == false) {
-			html +=  '<input class="div-getChallenges" type="submit" value="Get Challenges I Own" /><label for="challengeId"><span> OR ENTER THE URL </span></label>'
+			html +=  '<input class="div-getChallenges" type="button" value="Get Challenges I Own" /><label><span class="formNote"> OR Enter the URL for:</span></label>'
 			html +=  '<label for="challengeId"><span>Challenge ID</span>'
 			html +=  '<input type="text" name="challengeId" id="challengeId"/>'
 			html +=  '</label>'
 		} else {
-			html +=  '<input class="div-switchToManual" type="submit" value="Switch to Manual Input" /><label for="challengeId"><span> OR SELECT </span></label>'
+			html +=  '<input class="div-switchToManual" type="button" value="Switch to Manual Input" /><label for="challengeId"><span> OR SELECT </span></label>'
 			
 			html +=  '<label for="challengeId"><span>Challenge ID</span>'
 			html += '<select class="challengeId" id="challengeId" name="challengeId">'
@@ -635,14 +635,18 @@ if (debug) console.log('debug #userApiDetailsForm (Fetch Data)');
 	if (debugShowObject) console.log('exportFormat: ' + exportFormat );
 
 	if (debug) console.log('Challenge ID is ' +  challengeId);
-	challengeId = challengeId.slice(-36)
+	if (challengeId.length < 36) {
+		$('.div-getChallenges').trigger('click');
+	} else {
+		challengeId = challengeId.slice(-36)
 
-	newFetch = true ; //force table to be rebuild and memberIdSelection to be repicked
-	$(document).unbind('click'); //remove random elements listeners 
-	$(document).unbind('change'); //remove random elements listeners
-	if (debug) console.log('Challenge ID is ' +  challengeId);
-	
-    fetchData();
+		newFetch = true ; //force table to be rebuild and memberIdSelection to be repicked
+		$(document).unbind('click'); //remove random elements listeners 
+		$(document).unbind('change'); //remove random elements listeners
+		if (debug) console.log('Challenge ID is ' +  challengeId);
+		
+		fetchData();
+	}
 });
 
 
@@ -2544,6 +2548,25 @@ function parseData() {
 				$.each(membersChallenge[obj.id].tasks, function(index2, obj2){
 					var challengeTaskIndex = challengeTasksRef[obj2.challenge.taskId]
 					modifyTaskProperties(obj2)
+
+
+
+					obj2.checklistComp = {}
+					obj2.checklistComp.fullList = ''
+					obj2.checklistComp.fullListPretty = ''
+					obj2.checklistComp.fullListNotPretty = ''
+					var checkSymbol  = ''
+					$.each(obj2.checklist, function(index3, obj3){
+						if (obj3.completed) { 
+							checkSymbol = '&#9745'
+						} else {
+							checkSymbol = '&#9744'
+						}
+						if (obj2.checklistComp.fullList != '') checkSymbol = '<br />' + checkSymbol
+						obj2.checklistComp.fullList += checkSymbol + '&nbsp;&nbsp;' + obj3.text
+						obj2.checklistComp.fullListPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text)
+						obj2.checklistComp.fullListNotPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text, {removeParaTags: true})
+					});
 					
 					obj2.challengeStats = {}
 					
@@ -2567,6 +2590,7 @@ function parseData() {
 					obj2.challengeStats.valueDiffMin = undefined
 					obj2.challengeStats.valueDiffMax = undefined
 
+				
 					
 					if ((members[obj.id].challengeStats.joined.utcTime > obj2.creation.utcTime) || (members[obj.id].challengeStats.joined.utcTime == myDateConverter(neverDate, 'utcTime'))) members[obj.id].challengeStats.joined = obj2.creation
 					
@@ -2780,7 +2804,7 @@ function parseData() {
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('members[obj].' + obj3))
 							});
-							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
 					}
 				});
@@ -2797,7 +2821,7 @@ function parseData() {
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
 							});
-							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
 					}
 				});
@@ -2815,7 +2839,7 @@ function parseData() {
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
 							});
-							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
 					}
 				});
@@ -2863,7 +2887,7 @@ function parseData() {
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
 							});
-							if (obj.id != user.id || obj2.id != 'leadershipTool') sectionTables[obj2.id].dataSet.push(addToArray);
+							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
 					}
 				});
@@ -3802,7 +3826,7 @@ h2 {
     margin: 30px;
 }
 #userApiDetailsForm fieldset {
-    max-width: 40em;
+    max-width: 50em;
 }
 #userApiDetailsForm fieldset label,
 #userApiDetailsForm fieldset input[type="submit"] {
@@ -3811,10 +3835,16 @@ h2 {
     clear: left;
     margin: 10px 0;
 }
+#userApiDetailsForm fieldset input[type="button"] {
+    display: block;
+    float: left;
+    clear: left;
+    margin: 10px 0;
+}
 #userApiDetailsForm fieldset label span {
     display: block;
     float: left;
-    width: 8em;
+    width: 10em;
 }
 #userApiDetailsForm fieldset label input {
     float: left;
@@ -3924,8 +3954,8 @@ ul#tableOfContents > li {
 </style>
 </head>
 <body><div id="innerBody">	
-<h1>BETA <a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.0)</span></h1><!-- VERSION TOGGLE -->
+<h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.1)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3958,6 +3988,26 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.1 - Tick! Fixed up the Place<span class="date">2017-06-26</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Added CheckList details in Participant Overall and Participant per Task.</li>
+					<li>Pressing the "Enter" key on the login screen down detects if you filled out challenge information. (Smart Detect if no challenge information will get list otherwise gets challenge data).</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+					<li>Formatting the front login page. Minor layout change of labels. Removing the word BETA. (Oops forgot to take the construction sign down).</li>
+					<li>Slight modification to the message warning to make it clearer (Added extra punctuation).</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Overview: now reflects it is the Overview for the challenge! Thanks @Altariel! </li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>1.0 - Public Release!<span class="date">2017-06-19</span></dt>
         <dd><ul>
             <li>Features:
@@ -4011,7 +4061,7 @@ ul#tableOfContents > li {
 					<li>Fixed to-dos always to be counted as positive click regardless of value.</li>
 					<li>Handle zero habit difference values. Treated as positive. (Though this may be a bug in Habitica).</li>
 					<li>Awarding Gems in Per Member Stats/Random Winner now works all the time. Required to create new buttons for single section to fix. (Thank you @mandiferous. I finally found your bug)</li>
-					<li>Typo challege => Challenge</li>
+					<li>Typo Challenge</li>
                </ul>
             </li>
 		</ul></dd>	
@@ -4037,7 +4087,7 @@ ul#tableOfContents > li {
 					<li>Gem gifting message now shows message sent. (Thank you @mandiferous)</li>
 					<li>Removed incorrect references to the Data Display Tool. (Thank you @Alys)</li>
 					<li>Cold porridge now shows carriage returns.</li>
-					<li>Typo Partipants => Participants</li>
+					<li>Typo Participants</li>
 					<li>Minor formatting issues in Overview.</li>
                </ul>
             </li>
@@ -4241,8 +4291,6 @@ ul#tableOfContents > li {
 
 		<h2>Possible Future Features</h2>
 		<ul>
-			<li>Overall Task Completion Stats (for Guild Versus Guild).</li>
-			<li>Give a selection list of challenges that user owns.</li>
 		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
