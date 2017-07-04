@@ -162,7 +162,7 @@ sectionTables['memberActivity'] = {
 sectionTables['taskChallenge'] = {
 	type: 'challengeTask',
 	dataSet: [], 
-	dataSetHeader: ['Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'Last Updated', 'First Completion',  'Latest Completion',  'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Clicks', 'Positive Clicks', 'Negative Clicks', 'Total Not Due', 'Time Diff Min', 'Time Diff Max', 'Value Diff Min', 'Value Diff Max'], 
+	dataSetHeader: ['Task Id', 'Task Type', 'Task Name', 'Task Notes', 'Created',  'Last Updated', 'First Completion',  'Latest Completion',  'Streak Min', 'Streak Max', 'Streak Neg Min', 'Streak Neg Max', 'Total Clicks', 'Positive Clicks', 'Negative Clicks', 'Total Not Due', 'Time Diff Min', 'Time Diff Max','Time Diff Min ToDo', 'Time Diff Max ToDo', 'Time Diff Min Habit', 'Time Diff Max Habit', 'Time Diff Min Daily', 'Time Diff Max Daily', 'Value Diff Min', 'Value Diff Max' ], 
 	dataTable: ['id', 'type', 'textNotPretty', 'notesPretty', 'creation.shortDate', 'lastUpdated.shortDate', 'challengeStats.first.shortDate',  'challengeStats.last.shortDate',  'challengeStats.streak.min', 'challengeStats.streak.max', 'challengeStats.streakNeg.min', 'challengeStats.streakNeg.max', 'challengeStats.count', 'challengeStats.countPositive', 'challengeStats.countNegative', 'challengeStats.countNotDue', 'challengeStats.timeDiffMin.overall', 'challengeStats.timeDiffMax.overall', 'challengeStats.timeDiffMin.todo', 'challengeStats.timeDiffMax.todo', 'challengeStats.timeDiffMin.habit', 'challengeStats.timeDiffMax.habit', 'challengeStats.timeDiffMin.daily',  'challengeStats.timeDiffMax.daily', 'challengeStats.valueDiffMin.overall', 'challengeStats.valueDiffMax.overall' ],
 	babyBear: {show: [1,2,4,7,13,14], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [1,2,4,6,7,8,9,13,14,15,16,17], orderBy: [[1, 'asc']]},
@@ -224,9 +224,9 @@ sectionTables['membersTaskHistory'] = {
 	dataSet: [], 
 	dataSetHeader: ['User Id', 'User', 'Last Cron', 'UserTask Id', 'Task Id', 'Task Type', 'Task Name', 'Check List', 'Task Notes', 'Created',  'Clicked',  'Time Diff (Hrs)',  'Value', 'Value Diff'], 
 	dataTable: ['member.id', 'member.profile.nameNotPretty',   'member.lastLoggedIn.shortDate', 'task.challenge.id', 'task.challenge.taskId', 'task.type', 'task.textNotPretty', 'task.checklistComp.fullListNotPretty', 'task.notesPretty', 'task.creation.shortDate', 'taskHistory.datePretty.shortDate', 'taskHistory.hourDiff', 'taskHistory.valuePretty', 'taskHistory.valueDiff'],
-	babyBear: {show: [1,5,6,10,13], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
-	mamaBear: {show: [1,2,5,6,7,8,9,10,11,12], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
-	papaBear: {show: ['all'], orderBy: [[1, 'asc'],[5, 'asc'],[6, 'asc']]},
+	babyBear: {show: [1,5,6,10,13], orderBy: [[10, 'desc'],[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	mamaBear: {show: [1,2,5,6,7,8,9,10,11,12], orderBy: [[10, 'desc'],[1, 'asc'],[5, 'asc'],[6, 'asc'],[9, 'asc']]},
+	papaBear: {show: ['all'], orderBy: [[10, 'desc'],[1, 'asc'],[5, 'asc'],[6, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-right', 'targets': [2,9,10,11,12,13]}],
 	subTitle: function (){
 		var html = ''
@@ -253,13 +253,12 @@ sectionTables['chatExport'] = {
 	subTitle: function (){
 		var html = ''
 	
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
-		
+		html += sectionHeadingChat()
 		html += sectionHeadingLeadership()
 		return html 
 	},
 	reproduce: ['perMemberStats'],	
-	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1,2,3,4,5]}},	
+	reproduceSel: {perMemberStats: {selection:[1], hide:[1,2,3,4,5,6]}},	
 	leadershipButton: true,
 	uuidIndex: 1,
 	nameIndex: 2
@@ -277,12 +276,12 @@ sectionTables['chatNotSystemExport'] = {
 	subTitle: function (){
 		var html = ''
 		
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		html += sectionHeadingChat()
 		html += sectionHeadingLeadership()
 		return html 
 	},
 	reproduce: ['perMemberStats'],	
-	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1,2,3,4,5]}},	
+	reproduceSel: {perMemberStats: {selection:[1], hide:[1,2,3,4,5,6]}},	
 	leadershipButton: true,
 	uuidIndex: 1,
 	nameIndex: 2	
@@ -300,8 +299,7 @@ sectionTables['chatSystemExport'] = {
 	subTitle: function (){
 		var html = ''
 		
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
-		html += sectionHeadingLeadership()
+		html += sectionHeadingChat()
 		return html 
 	}
 }
@@ -318,12 +316,12 @@ sectionTables['chatLikes'] = {
 	subTitle: function (){
 		var html = ''
 		
-		html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		html += sectionHeadingChat()
 		html += sectionHeadingLeadership()
 		return html 
 	},
 	reproduce: ['perMemberStats'],	
-	reproduceSel: {perMemberStats: {selection:[0], hide:[0,1]}},	
+	reproduceSel: {perMemberStats: {selection:[1], hide:[1,2]}},	
 	leadershipButton: true,
 	uuidIndex: 1,
 	nameIndex: 2
@@ -351,6 +349,15 @@ sectionTables['displayInboxSection'] = {
 	nameIndex: 1
 }
 
+function sectionHeadingChat() {
+		var html = ''
+		if (group.chat.length > 0) {
+			html += '<p><span class="highlight">Chat period: </span>' + group.chatTotals.firstChat.dateAndTime + ' to ' + group.chatTotals.lastChat.dateAndTime + ' (' + group.chatTotals.chatDayPeriod + ' days)</p>'
+		} else {
+			html +=  '<p>It appears a vow of silence has been taken, as there is no chat to report on.</p>'
+		}
+		return html
+}
 	
 function sectionHeadingLastActive() {	
 	var html = ''
@@ -462,7 +469,7 @@ function enableShowHideToggling() {
 if (debug) console.log('debug enableShowHideToggling');
 
 	//Populate Selector
-	var htmlChallengeId = getChallengeSelector()
+	var htmlChallengeId = getChallengeSelectorHtml()
 	var htmlExport =  getExportOptionsHtml()
 	var htmlDesc =  getExportDescHtml()
 	var htmlSection = getSectionDescHtml()
@@ -514,7 +521,7 @@ if (debug) console.log('debug enableShowHideToggling');
         window.scrollTo(0, 0);
     });
 	
-	function getChallengeSelector() {
+	function getChallengeSelectorHtml() {
 		var html = '';
 		
 		if (challengeDropDownShow == false) {
@@ -624,6 +631,7 @@ function getUrlVars() {
 //////////////////////////////////////////////////////////////////////
 ////   Login events      /////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+$('#userApiDetailsForm').unbind('click')
 $('#userApiDetailsForm').on('click', '.div-fetchData', function(event){
 if (debug) console.log('debug #userApiDetailsForm (Fetch Data)');
 	/* The user manually submitted the API connection form. */
@@ -658,7 +666,7 @@ if (debug) console.log('debug #userApiDetailsForm (getChallenges)');
     apiToken = $('#apiToken').val();
 
 	challengeDropDownShow = true;
-	fetchOwnedChallenges();
+	fetchChallengeForUser();
 	
 	
 });
@@ -680,9 +688,9 @@ if (debug) console.log('debug #userApiDetailsForm (switchToManual)');
 //////////////////////////////////////////////////////////////////////
 ////   Data Fetch Functions   //////////////////////////////
 //////////////////////////////////////////////////////////////////////
-function fetchOwnedChallenges() {
-    if (debug) console.log('fetchdata');
-	if (debug) console.log('Challenge ID is ' +  challengeId);
+function fetchChallengeForUser() {
+    if (debug) console.log('fetch Challenge For User Data');
+	
     $('#loading #serverName').text(serverName);
     $('#loading .good').show();
     $('#loading .bad' ).hide();
@@ -2250,7 +2258,8 @@ function parseData() {
 			group.chatTotals.timePeriod = []
 			group.chatTotals.timePeriod_notSystem = []
 			group.chatTotals.timePeriod_system = []		
-
+			group.chatTotals.firstChat  = reformatDate(neverDate)
+			group.chatTotals.lastChat  = reformatDate(neverDate)
 			
 			// Loop through all tasks items to add all items to be populated 
 			$.each(challengeTasks, function(index, obj){
@@ -2441,12 +2450,12 @@ function parseData() {
 					lastEphochTime_system = obj.timestamp
 				}
 				
-				if (group.chatTotals.firstChat != undefined){
+				if (group.chatTotals.firstChat.utcTime != myDateConverter(neverDate, 'utcTime')){
 					if (moment(obj.creation.utcTime).isBefore(group.chatTotals.firstChat.utcTime)) group.chatTotals.firstChat = obj.creation
 				} else {
 					group.chatTotals.firstChat = obj.creation
 				}
-				if (group.chatTotals.lastChat != undefined){
+				if (group.chatTotals.lastChat.utcTime != myDateConverter(neverDate, 'utcTime')){
 					if (moment(obj.creation.utcTime).isAfter(group.chatTotals.lastChat.utcTime)) group.chatTotals.lastChat = obj.creation
 				} else {
 					group.chatTotals.lastChat = obj.creation
@@ -2609,7 +2618,7 @@ function parseData() {
 					
 						addToArray = {};
 						addToArray = {date: tempDate, value: obj2.value}
-						if ((obj2.history.length == 0) || (obj2.history[obj2.history.length-1].date != tempDate)) obj2.history.push(addToArray)						
+						if ((obj2.type != 'daily') || !(members[obj.id].preferences.sleep)) if ((obj2.history.length == 0) || (obj2.history[obj2.history.length-1].date != tempDate)) obj2.history.push(addToArray)						
 					}	
 
 					var tempValuePrev = 0
@@ -3383,15 +3392,18 @@ function parseData() {
 				htmlTablePreTOC += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 				htmlTablePre += '<hr class="padded" />'
 				htmlTablePre += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'
-				htmlTablePre += '<p>Name: ' + members[memberIdSelection].profile.nameNotPretty + ' (User Id: ' + memberIdSelection + ')</p>'
-				htmlTablePre += '<p>Born: ' + members[memberIdSelection].creation.dateAndTime + '</p>'
-				htmlTablePre += '<p>Joined Challenge: ' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</p>'
-				htmlTablePre += '<p>Last Active In Challenge: ' + members[memberIdSelection].challengeStats.last.dateAndTime + '</p>'
-				htmlTablePre += '<p>Last Active: ' + members[memberIdSelection].lastActive.dateAndTime 
+				htmlTablePre += '<table class="perMemberStats_participantDetails" id="perMemberStats_participantDetails">'
+				htmlTablePre += '<tr><th>Name: </th><td>' + members[memberIdSelection].profile.nameNotPretty + ' (User Id: ' + memberIdSelection + ')</td></tr>'
+				htmlTablePre += '<tr><th>Born: </th><td>' + members[memberIdSelection].creation.dateAndTime + '</td></tr>'
+				htmlTablePre += '<tr><th>Joined Challenge: </th><td>' + members[memberIdSelection].challengeStats.joined.dateAndTime + '</td></tr>'
+				htmlTablePre += '<tr><th>Last Active In Challenge: </th><td>' + members[memberIdSelection].challengeStats.last.dateAndTime + '</td></tr>'
+				htmlTablePre += '<tr><th>Last Active: </th><td>' + members[memberIdSelection].lastActive.dateAndTime 
 				if (members[memberIdSelection].preferences.sleep) htmlTablePre +=  ' (Currently resting in the Inn)'
-				htmlTablePre += '</p>'
-				htmlTablePre += '<p>Level/Class: Level ' + members[memberIdSelection].stats.lvl + ' ' + members[memberIdSelection].stats.classPretty + '</p>'
-				htmlTablePre += '<p>Profile:</br>' + members[memberIdSelection].blurbPretty + '</p>'
+				htmlTablePre += '</td></tr>'
+				htmlTablePre += '<tr><th>Last Cron: </th><td>' + members[memberIdSelection].lastLoggedIn.dateAndTime + '</td></tr>'
+				htmlTablePre += '<tr><th>Level & Class: </th><td>Level ' + members[memberIdSelection].stats.lvl + ' ' + members[memberIdSelection].stats.classPretty + '</td></tr>'
+				htmlTablePre += '</table>'
+				htmlTablePre += '<p class="subheading">Profile: <br />' + members[memberIdSelection].blurbPretty + '</p>'
 				htmlTablePre += htmlReturnTOC 
 
 
@@ -3809,7 +3821,7 @@ h2 {
 *********************************************************************/
 
 #documentationAndForm > div {
-    max-width: 700px;
+    max-width: 750px;
 }
 #documentationAndForm #documentationAndFormClose {
     display: none;
@@ -3844,7 +3856,7 @@ h2 {
 #userApiDetailsForm fieldset label span {
     display: block;
     float: left;
-    width: 10em;
+    width: 12em;
 }
 #userApiDetailsForm fieldset label input {
     float: left;
@@ -3928,10 +3940,15 @@ ul#tableOfContents > li {
 }
 
 
+
 #overviewSection table tr td {
     border: 2px solid lightgrey;
 	text-align: center;
 	padding: 5px;
+}
+
+table#perMemberStats_participantDetails {
+	text-align: left;
 }
 
 #perMemberStats_awardChallenge.div-perMemberStats_awardChallenge {
@@ -3955,7 +3972,7 @@ ul#tableOfContents > li {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.2)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.3)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3988,6 +4005,26 @@ ul#tableOfContents > li {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.3 - Banish the Chatter Bug<span class="date">2017-07-04</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>Added last cron to Participant details in Per Participant Stats/Random Winner.</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+					<li>Modified Participant details in Per Participant Stats/Random Winner to table for easier reading.</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+                    <li>Zero Chat Guilds are now fetch. Thanks @Altariel!</li>
+					<li>Chat Export and Chat Likes now show correctly for per member/random winner stats.</li>
+					<li>Papa Bear Option of Task Challenges now show all and correctly named columns for Tasks Overall.</li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>1.2 - Message Ids<span class="date">2017-06-26</span></dt>
         <dd><ul>
             <li>Features:
