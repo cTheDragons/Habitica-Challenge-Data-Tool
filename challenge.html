@@ -116,7 +116,7 @@ var sectionsToDisplay = [
 		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Displays the chat in which the challenge was posted, or the guild where chat messages should show, ie for Tavern, the chat from Tavern Challenge OverFlow Shows'},
 		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
 		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
-		{type: 'sectionTable', id: 'chatLikes', title: 'Chat Likes', showOnly: [], description: 'Shows who has liked what chat message.'},
+		{type: 'sectionTable', id: 'chatLikes', title: 'Chat Likes', showOnly: [], description: 'Shows who has liked which chat message.'},
 		{type: 'sectionTable', id: 'displayInboxSection', title: 'PMs', showOnly: [], description: 'Displays personal messages you have exchanged with participants of this challenge.'}
 ]
 
@@ -444,8 +444,8 @@ var groupId 					= ''; //holds group id from
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
-var debug						= false;
-var debugShowObject				= false;
+var debug						= true;
+var debugShowObject				= true;
 
 
 if (debug || debugShowObject) serverName = '*** TURN DEBUG OFF! *** - ' + serverName
@@ -535,9 +535,11 @@ if (debug) console.log('debug enableShowHideToggling');
 			html +=  '<label for="challengeId"><span>Challenge ID</span>'
 			html += '<select class="challengeId" id="challengeId" name="challengeId">'
 			$.each(challengeForUser, function(index, obj){	
-				if (userId == obj.leader.id) {
-					html += '<option value="' + obj.id + '"'
-					html += '>' + obj.name + '</option>';
+				if (obj.leader != undefined) {
+					if (userId == obj.leader.id) {
+						html += '<option value="' + obj.id + '"'
+						html += '>' + obj.name + '</option>';
+					}
 				}
 			});	
 			html += '</select>'
@@ -1213,7 +1215,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 
 	function postMessageUserSuccess(data){
 		if (debug) console.log('debug postMessageUserSucess start');
-		$('#posting #statusPost').text('Succesfully Messaged ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Messaged ' + obj[nameIndex] );
 		if (debugShowObject) console.log(data);
 		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
 		index++
@@ -1336,7 +1338,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 
 	function postGiftGemSuccess(data){
 		if (debug) console.log('debug postGiftGemSucess start');
-		$('#posting #statusPost').text('Succesfully Gifted Gems to ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Gifted Gems to ' + obj[nameIndex] );
 		if (debugShowObject) console.log(data);
 		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
 		index++
@@ -1431,7 +1433,7 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 
 	function postAwardChallengeSuccess(data){
 		if (debug) console.log('debug postAwardChallengeSucess start');
-		$('#posting #statusPost').text('Succesfully Awarded ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Awarded ' + obj[nameIndex] );
 		if (debugShowObject) console.log(data);
 		$('#posting #statusPost').text('Challenge has closed.' );
 		alert('The user ' + obj[nameIndex] + ' has been awarded the challenge. \n\nThe challenge has now closed')
@@ -1691,7 +1693,7 @@ function parseData() {
 				'<div id="explanationAndClearLinks">' +
 				'<input id="refetch" type="submit" value="' +
 				'Re-Fetch Data (last fetched ' + fetchtime + ')" />' +
-				'<span id="documentationAndFormToggle" class="showHideToggle" data-target="documentationAndForm" data-linktext="documentation" data-closemainsections="true">show documentation / options</span>' +
+				'<span id="documentationAndFormToggle" class="showHideToggle" data-target="documentationAndForm" data-linktext="documentation / options" data-closemainsections="true">show documentation / options</span>' +
 				'</div>'  				
 				
 		);
@@ -3972,7 +3974,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.3)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.4)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4005,6 +4007,26 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.4 - ####<span class="date">2017-##-##</span></dt>
+        <dd><ul>
+            <li>Features:
+                <ul>
+					<li>###</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+					<li>Minor wording changes for the section descriptions.</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+					<li>Handle no leader if data is wonky when retrieving challenges you own. (Left it to error on other situations so users would get their data fixed).</li>
+					<li>documentation / options always shows next to the re-fetch button</li>
+					<li>Typo Successfully</li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>1.3 - Banish the Chatter Bug<span class="date">2017-07-04</span></dt>
         <dd><ul>
             <li>Features:
