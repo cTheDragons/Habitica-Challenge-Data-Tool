@@ -437,6 +437,9 @@ var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/'
 var imageShopPrefix             =  'shop_'
 var imageFileSuffix				= '.png'
 var imageGem					= 'Pet_Currency_Gem1x.png'
+var serverGDT					= 'https://oldgods.net/habitica/cTheDragons/group.html'
+var hookGDT_uid					= 'uuid'
+var hookGDT_groupid				= 'groupId'
 var userId						= '';
 var apiToken					= '';
 var challengeId 				= ''; //holds selected challenge (drop down)
@@ -444,8 +447,8 @@ var groupId 					= ''; //holds group id from
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
-var debug						= true;
-var debugShowObject				= true;
+var debug						= false;
+var debugShowObject				= false;
 
 
 if (debug || debugShowObject) serverName = '*** TURN DEBUG OFF! *** - ' + serverName
@@ -1710,15 +1713,16 @@ function parseData() {
 		var displayChallengeName = challenge.nameNotPretty;
 		var displayGemAmount = challenge.prize + ' <img src="' + imageURL + imageGem + '" alt="' + 'Gem' + '">'
 		var displayLeaderName = challenge.leader.profile.nameNotPretty;
-		var displayGuildName = challenge.group.nameNotPretty;
+		var displayGuildName = challenge.group.nameLink;
 		var displayCreated = challenge.creation.dateAndTime;
-		if (challenge.group.name != group.name) displayGuildName += ' (Guild Chat: ' + group.nameNotPretty + ')'
+		if (challenge.group.name != group.name) displayGuildName += ' (Guild Chat: ' + group.nameLink + ')'
 		
 		$('#headerGroupExtras').html('<div id="challengeNameDisplay">' + displayChallengeName + '</div>' +
 				'<div id="challengeHeaderDetailDisplay">' + ' Owner: ' + displayLeaderName + 
 				'&nbsp;&nbsp;&nbsp;&nbsp;<span class="showHideToggle" data-target="perMemberStatsSection" data-closemainsections="true">Prize: ' + displayGemAmount + '</span>' +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Created: ' + displayCreated +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Guild: ' + displayGuildName +
+				'&nbsp;&nbsp;&nbsp;&nbsp;Id: ' + challengeId +
 				'</div>'  
 		);
 	}
@@ -2185,6 +2189,7 @@ function parseData() {
 			challenge.leader.profile.nameNotPretty = renderFormattedText(challenge.leader.profile.name, {removeParaTags: true})
 			challenge.leader.profile.namePretty = renderFormattedText(challenge.leader.profile.name)
 			challenge.group.nameNotPretty = renderFormattedText(challenge.group.name, {removeParaTags: true})
+			challenge.group.nameLink = '<a href="' + serverGDT + '?' + hookGDT_uid + '=' + userId + '&' + hookGDT_groupid + '=' + challenge.group.id + '" target="_blank">' + renderFormattedText(challenge.group.name, {removeParaTags: true}) + '</a>'
 			challenge.group.namePretty = renderFormattedText(challenge.group.name)
 			challenge.creation = reformatDate(challenge.createdAt)
 			challenge.memberTotals = {}
@@ -2235,6 +2240,7 @@ function parseData() {
 			
 			//Group
 			group.nameNotPretty = renderFormattedText(group.name, {removeParaTags: true})
+			group.nameLink = '<a href="' + serverGDT + '?' + hookGDT_uid + '=' + userId + '&' + hookGDT_groupid + '=' + group.id + '" target="_blank">' + renderFormattedText(group.name, {removeParaTags: true}) + '</a>'
 			group.namePretty = renderFormattedText(group.name)
 			group.leader.profile.nameNotPretty = renderFormattedText(group.leader.profile.name, {removeParaTags: true})
 			group.leader.profile.namePretty = renderFormattedText(group.leader.profile.name)
@@ -4007,11 +4013,12 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
-		<dt>1.4 - ####<span class="date">2017-##-##</span></dt>
+		<dt>1.4 - Links!<span class="date">2017-08-02</span></dt>
         <dd><ul>
             <li>Features:
                 <ul>
-					<li>###</li>
+					<li>Adding Link to Party Tool for Guild</li>
+					<li>Adding id for Challenge in Header</li>
 				</ul> 
             </li>
 	        <li>Documentation:
@@ -4021,7 +4028,7 @@ table#perMemberStats_participantDetails {
             </li>		
 	        <li>Bug Fixes:
                 <ul>
-					<li>Handle no leader if data is wonky when retrieving challenges you own. (Left it to error on other situations so users would get their data fixed).</li>
+					<li>Handle no owner when retrieving challenges list. (Left it to error when choosing a challenge when there is no owner - force users to get the data fixed).</li>
 					<li>documentation / options always shows next to the re-fetch button</li>
 					<li>Typo Successfully</li>
                </ul>
