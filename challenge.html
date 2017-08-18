@@ -1763,17 +1763,18 @@ function parseData() {
 
 	function renderFormattedText(text, options) {
 		var md = window.habiticaMarkdown;
-		
-		if (exportFormats[exportFormat].convertMarkup) text = md.render(text);
-		if (exportFormats[exportFormat].removeHtml) text = $(text).text();
-		if (exportFormats[exportFormat].convertLineBreaks) text = text.replace(/(?:\r\n|\r|\n)/g, '<br />');
-		if (options && options.removeParaTags) {
-            text = String(text).replace(/^<p>|<\/p>\n$/g, '');
-        }
-        else if (options && options.setParaClass) {
-            text = String(text).replace(/<p>/g,
-                       '<p class="' + options.setParaClass + '">');
-        }
+		if (text != undefined) {
+			if (exportFormats[exportFormat].convertMarkup) text = md.render(text);
+			if (exportFormats[exportFormat].removeHtml) text = $(text).text();
+			if (exportFormats[exportFormat].convertLineBreaks) text = text.replace(/(?:\r\n|\r|\n)/g, '<br />');
+			if (options && options.removeParaTags) {
+				text = String(text).replace(/^<p>|<\/p>\n$/g, '');
+			}
+			else if (options && options.setParaClass) {
+				text = String(text).replace(/<p>/g,
+						   '<p class="' + options.setParaClass + '">');
+			}
+		}
 		return text;
 	}
 	
@@ -2206,7 +2207,7 @@ function parseData() {
 			challenge.memberTotals.inInn_activeLessMonth = 0 //to populate later
 			challenge.memberTotals.class = {}
 			challenge.memberTotals.class.warrior = 0 //to populate later
-			challenge.memberTotals.class.mage = 0 //to populate later
+			challenge.memberTotals.class.wizard = 0 //to populate later
 			challenge.memberTotals.class.rogue = 0 //to populate later
 			challenge.memberTotals.class.healer = 0 //to populate later
 			challenge.memberTotals.underLevel10 = 0 //to populate later
@@ -3202,7 +3203,7 @@ function parseData() {
 			html += ' Members: ' + group.memberCount + '</p>'
 			html += '<p><table class=overview_classBreakdown>' + 
 						'<tr><th>Warrior</th><th>Mage</th><th>Rogue</th><th>Healer</th></tr>' + 
-						'<tr><td>' + challenge.memberTotals.class.warrior + '</td><td>' + challenge.memberTotals.class.mage + '</td><td>' + challenge.memberTotals.class.rogue + '</td><td>' + challenge.memberTotals.class.healer + '</td></tr>' +
+						'<tr><td>' + challenge.memberTotals.class.warrior + '</td><td>' + challenge.memberTotals.class.wizard + '</td><td>' + challenge.memberTotals.class.rogue + '</td><td>' + challenge.memberTotals.class.healer + '</td></tr>' +
 						'</table> ' + 
 						'There are ' + challenge.memberTotals.underLevel10 + ' members under level 10 who might not have chosen their class yet.</p>'
 			html += htmlReturnTOC
@@ -3980,7 +3981,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.4)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.5)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4013,6 +4014,15 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.5 - Really I Can Count!<span class="date">2017-08-19</span></dt>
+        <dd><ul>		
+	        <li>Bug Fixes:
+                <ul>
+					<li>Better handling of null strings with markdown.</li>
+					<li>Mage totals now show in overview.</li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>1.4 - Links!<span class="date">2017-08-02</span></dt>
         <dd><ul>
             <li>Features:
@@ -4365,7 +4375,9 @@ table#perMemberStats_participantDetails {
 
 		<h2>Possible Future Features</h2>
 		<ul>
-		<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
+			<li>Section to choose winners by Daily/All Task Completed/Most Positive Ticks etc</li>
+			<li>Column Filtering (as opposed to single search box)</li>
+			<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
 		<h2>Known Bugs</h2>
