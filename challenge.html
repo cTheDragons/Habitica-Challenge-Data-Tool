@@ -78,7 +78,7 @@ var TABLEDISPLAYSUFFIX = '_display'
 var altChatGuild =		{
 							'00000000-0000-4000-A000-000000000000': {name: 'Tavern', nameAlt: 'Tavern Overflow', alt:'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'},
 							'5481ccf3-5d2d-48a9-a871-70a7380cee5a': {name: 'Habitica Help', nameAlt: 'Tavern Overflow', alt:'e8e2f1ce-ae18-4cb1-8dd8-8e4adc59442f'},	
-							'2f6085fe-5382-46d6-a0ac-c1b16f4f7780': {name: 'The Duelling Grounds', nameAlt: 'The Duelling Grounds Scoring Board', alt:'87e8ace7-614f-4537-b187-7536d14ae70f'}
+							'8c492c97-2fcc-40b4-b574-89543a719634': {name: 'The Duelling Grounds', nameAlt: 'The Duelling Grounds Tally Board', alt:'87e8ace7-614f-4537-b187-7536d14ae70f'}
 						}	
 //////////////////////////////////////////////////////////////////////
 ////   Sections                              /////////////////
@@ -2642,7 +2642,7 @@ function parseData() {
 						members[obj.id].challengeStats.count += 1
 						if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.count += 1
 						challenge.challengeStats.count += 1
-						if ((obj3.value > tempValuePrev) ||  (obj2.type == 'todo') || ((obj3.value == tempValuePrev) && (obj2.type != 'daily'))) {
+						if ((obj3.value > tempValuePrev && !(obj2.type == 'habit' && obj2.up == false)) ||  (obj2.type == 'habit' && obj2.down == false) ||  (obj2.type == 'todo') || ((obj3.value == tempValuePrev) && (obj2.type != 'daily'))) {
 							obj2.challengeStats.countPositive += 1
 							members[obj.id].challengeStats.countPositive += 1
 							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += 1
@@ -2659,7 +2659,7 @@ function parseData() {
 
 							obj2.challengeStats.streakNeg.current = 0
 							
-						} else if (obj3.value < tempValuePrev ) {
+						} else if ((obj3.value < tempValuePrev && !(obj2.type == 'habit' && obj2.down == false)) || (obj2.type == 'habit' && obj2.up == false) ) {
 							obj2.challengeStats.countNegative += 1
 							members[obj.id].challengeStats.countNegative += 1
 							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += 1
@@ -3981,7 +3981,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.5)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.6)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4014,6 +4014,19 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.6 - More Lessons in Counting<span class="date">2017-09-11</span></dt>
+        <dd><ul>		
+            <li>Features:
+                <ul>
+					<li>Set the Guild Chat to the Duelling Grounds Tally for the Duelling Grounds as this used more by challenge there.</li>
+				</ul> 
+            </li>
+	        <li>Bug Fixes:
+                <ul>
+					<li>Single direction counts now count correctly in the right direction.</li>
+               </ul>
+            </li>
+		</ul></dd>
 		<dt>1.5 - Really I Can Count!<span class="date">2017-08-19</span></dt>
         <dd><ul>		
 	        <li>Bug Fixes:
