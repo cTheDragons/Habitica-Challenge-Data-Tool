@@ -38,7 +38,9 @@ Contributors:
 	<script src="https://code.jquery.com/jquery-1.12.3.js"></script> <!--- jquery -->
 	<script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script> <!--- time functions -->
 	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
+	<script src="js/habitica-avatar.js"></script>  <!--- Avatar Generation -->
 	<script src="js/lodash.js"></script> <!--lodash / copy objects -->
+	
 
 	 <!--- https://datatables.net/download/ -->
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/pdfmake-0.1.18/dt-1.10.12/b-1.2.2/b-colvis-1.2.2/b-flash-1.2.2/b-html5-1.2.2/b-print-1.2.2/se-1.2.0/datatables.min.js"></script>
@@ -66,6 +68,7 @@ var membersTaskHistory; //holds information per completion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups 
 var memberIdSelection; //holds membersIdSelection
 var userIsAdmin; //holds if the user is an Admin or not
+var avatarGeneration = [];
 var newFetch; //holds if first fetch (therefore tables to be built and random member etc) is requried.
 
 //////////////////////////////////////////////////////////////////////
@@ -124,10 +127,10 @@ var sectionTables =	{}
 sectionTables['memberList'] = {
 	type: 'member',
 	dataSet: [], 
-	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Mod',  'Born', 'Next Birthday', 'Can PM?', 'User (Plain)'],
-	dataTable: ['id', 'profile.nameLink', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin',  'creation.shortDate',  'creation.nextBirthday.shortDate', 'inbox.canPM', 'profile.nameNotPretty'],
-	babyBear: {show: [1,3,4], orderBy: [[1, 'asc']]},
-	mamaBear: {show: [0,1,2,3,4,5,6,10], orderBy: [[1, 'asc']]},
+	dataSetHeader: ['User Id', 'User', 'Profile', 'Class', 'Level', 'Tier', 'Contributor', 'Contributions',  'Mod',  'Born', 'Next Birthday', 'Can PM?', 'Avatar'],
+	dataTable: ['id', 'profile.nameNotPretty', 'blurbPretty', 'stats.classPretty', 'stats.lvl', 'contribPretty.level', 'contribPretty.text',  'contribPretty.contributions', 'contribPretty.admin',  'creation.shortDate',  'creation.nextBirthday.shortDate', 'inbox.canPM', 'profile.avatar'],
+	babyBear: {show: [1,3,4,12], orderBy: [[1, 'asc']]},
+	mamaBear: {show: [0,1,2,3,4,5,6,10,12], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
 	extraColumnDefs: [{'className': 'dt-center', 'targets': [8,11]}, {'className': 'dt-right', 'targets': [4,5,9,10]}],
 	subTitle: function (){
@@ -137,7 +140,7 @@ sectionTables['memberList'] = {
 	},	
 	leadershipButton: true,
 	uuidIndex: 0,
-	nameIndex: 12
+	nameIndex: 1
 }
 sectionTables['memberActivity'] = {
 	type: 'member',
@@ -437,6 +440,7 @@ var imageURL					= 'https://habitica-assets.s3.amazonaws.com/mobileApp/images/'
 var imageShopPrefix             =  'shop_'
 var imageFileSuffix				= '.png'
 var imageGem					= 'Pet_Currency_Gem1x.png'
+var serverHabiticaChallenge		= 'https://habitica.com/challenges/'
 var serverGDT					= 'https://oldgods.net/habitica/cTheDragons/group.html'
 var hookGDT_uid					= 'uuid'
 var hookGDT_groupid				= 'groupId'
@@ -1121,6 +1125,10 @@ function fetchData() {
 ////  Post functions      //////////////////////////////
 //////////////////////////////////////////////////////////////////////
 // All post functions are implemented serial as they are unreliable when performed in parallel.
+
+//////////////////////////////////////////////////////////////////////
+////  Post Private Message			    //////////////////////////////
+//////////////////////////////////////////////////////////////////////
 function postMessageUser(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postMessageUser start');
 	if (debugShowObject) console.log(rowData)
@@ -1205,10 +1213,10 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		
 
 	
-	function postMessageUserFailure(UserNotFound){
+	function postMessageUserFailure(data){
 		if (debug) console.log('debug postMessageUserFailure start');
-		if (debugShowObject) console.log(UserNotFound);
-		var errData = UserNotFound;
+		if (debugShowObject) console.log(data);
+		var errData = data;
 		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		index++
 		
@@ -1240,7 +1248,9 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	}
 }
 
-
+//////////////////////////////////////////////////////////////////////
+////  Post Gift Gem				    //////////////////////////////
+//////////////////////////////////////////////////////////////////////
 function postGiftGem(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postGiftGem start');
 	var urlToPost = ''	
@@ -1328,10 +1338,10 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		
 
 	
-	function postGiftGemFailure(UserNotFound){
+	function postGiftGemFailure(data){
 		if (debug) console.log('debug postGiftGemFailure start');
-		if (debugShowObject) console.log(UserNotFound);
-		var errData = UserNotFound;
+		if (debugShowObject) console.log(data);
+		var errData = data;
 		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		index++
 		
@@ -1363,7 +1373,9 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	}
 }	
 
-
+//////////////////////////////////////////////////////////////////////
+////  Post Award Challenge					    //////////////////////////////
+//////////////////////////////////////////////////////////////////////
 function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postAwardChallenge start');
 	var urlToPost = ''	
@@ -1423,10 +1435,10 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		
 
 	
-	function postAwardChallengeFailure(UserNotFound){
+	function postAwardChallengeFailure(data){
 		if (debug) console.log('debug postAwardChallengeFailure start');
-		if (debugShowObject) console.log(UserNotFound);
-		var errData = UserNotFound;
+		if (debugShowObject) console.log(data);
+		var errData = data;
 		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		
 		fetchdata()
@@ -1482,6 +1494,24 @@ function parseData() {
 		refreshAndDisplayMAIN([]);
 	} else {
 		formatAndDisplayMAIN();
+	}
+	
+	formatAndDisplayAVATAR()
+	
+	
+	function formatAndDisplayAVATAR() {
+		if (debug) console.log('debug avatarGeneration start')
+		if (debugShowObject) console.log(avatarGeneration)
+		
+		//Generates all avatars and display them as required.
+		$.each(avatarGeneration, function(index, obj) {
+			habiticaAvatar.fromUserId(obj.userId, {
+			  container: '#' + obj.divId,
+			  // any other options
+			})
+
+		});
+
 	}
 	
 	//newFetch = false; //done everything now so no need to worry.
@@ -1722,7 +1752,7 @@ function parseData() {
 				'&nbsp;&nbsp;&nbsp;&nbsp;<span class="showHideToggle" data-target="perMemberStatsSection" data-closemainsections="true">Prize: ' + displayGemAmount + '</span>' +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Created: ' + displayCreated +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Guild: ' + displayGuildName +
-				'&nbsp;&nbsp;&nbsp;&nbsp;Id: ' + challengeId +
+				'&nbsp;&nbsp;&nbsp;&nbsp;Id: <a href="' + serverHabiticaChallenge + challengeId + '">' + challengeId + '</a> ' +
 				'</div>'  
 		);
 	}
@@ -2154,6 +2184,7 @@ function parseData() {
     //////////////////////////////////////////////////////////////////////
 		
 		function formatAllDataAndCollate() {
+			avatarGeneration = []; //List of Avatar to generate
 		
 			var addToArray = []; //Used to create final array to add to dataSet
 			var tempMembersList = []; //For looping through each members and adding missing variables
@@ -2163,6 +2194,7 @@ function parseData() {
 			var membersTaskHistory = [];
 			var challengeTasksRef = {};
 			var chatLikes = [];
+			
 			
 			//To complete chat stats
 			var lastEphochTime = 0
@@ -2493,6 +2525,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('obj.' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							//Don't include system messages if chatNotSystemExport
 							if ((obj.uuid != 'system' && obj2.id == 'chatNotSystemExport') || (obj.uuid == 'system' && obj2.id == 'chatSystemExport') || (obj2.id != 'chatNotSystemExport' && obj2.id != 'chatSystemExport')) sectionTables[obj2.id].dataSet.push(addToArray); 
@@ -2821,6 +2859,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('members[obj].' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('members[obj].' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2838,6 +2882,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('obj.' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2856,6 +2906,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('obj.' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2874,6 +2930,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('obj.' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2904,6 +2966,12 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
+								if (obj3.indexOf('avatar') > 0) {
+									var divString = eval('obj.' + obj3)
+									var divUID = divString.slice(-45,-9) //"></div>
+									var divID = divString.slice(10,-9)
+									avatarGeneration.push({divId: divID, userId: divUID})
+								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2925,6 +2993,12 @@ function parseData() {
 								addToArray = []; //clear array
 								$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 									addToArray.push(eval('obj.' + obj3))
+									if (obj3.indexOf('avatar') > 0) {
+										var divString = eval('obj.' + obj3)
+										var divUID = divString.slice(-45,-9) //"></div>
+										var divID = divString.slice(10,-9)
+										avatarGeneration.push({divId: divID, userId: divUID})
+									}
 								});
 								//Don't include system messages if chatNotSystemExport
 								sectionTables[obj2.id].dataSet.push(addToArray); 
@@ -2999,22 +3073,38 @@ function parseData() {
 			}
 			obj.creation  = reformatDate(obj.timestamp);
 			//if (debugShowObject) console.log(obj);
-			if (obj.contributor.text != undefined ) {
-				obj.contribPretty = [];
-				obj.contribPretty.text = obj.contributor.text;
-				obj.contribPretty.level = obj.contributor.level;
-				obj.contribPretty.contributions = obj.contributor.contributions;
-				if (obj.contributor.admin === true) {
-					obj.contribPretty.admin = 'true'
+			if (obj.contributor  !=  undefined ) {
+				if (obj.contributor.text  !=  undefined ) {
+					obj.contribPretty = [];
+					obj.contribPretty.text = obj.contributor.text;
+					if (obj.contributor.level != undefined)	{
+						obj.contribPretty.level = obj.contributor.level
+					} else {
+						obj.contribPretty.level = '';
+					};
+					if (obj.contributor.contributions  !=  undefined){
+						obj.contribPretty.contributions = obj.contributor.contributions;
+					} else {
+						obj.contribPretty.contributions = '';
+					}
+					if (obj.contributor.admin === true) {
+						obj.contribPretty.admin = true
+					} else {
+						obj.contribPretty.admin  = false
+					}
 				} else {
-					obj.contribPretty.admin  = 'false'
+					obj.contribPretty = [];
+					obj.contribPretty.text = '';
+					obj.contribPretty.level = '';
+					obj.contribPretty.contributions = '';
+					obj.contribPretty.admin = false;
 				}
 			} else {
 				obj.contribPretty = [];
 				obj.contribPretty.text = '';
 				obj.contribPretty.level = '';
 				obj.contribPretty.contributions = '';
-				obj.contribPretty.admin = '';
+				obj.contribPretty.admin = false;
 			}
 			if (obj.sent === true) {
 				obj.sentPretty = 'true'
@@ -3039,10 +3129,12 @@ function parseData() {
 				obj.profile.namePretty = 'System'
 				obj.profile.nameNotPretty = 'System'
 				obj.profile.nameLink = 'System'
+				obj.profile.avatar = ''
 			} else {
 				obj.profile.namePretty = renderFormattedText(obj.profile.name);
 				obj.profile.nameNotPretty = renderFormattedText(obj.profile.name, {removeParaTags: true});
 				obj.profile.nameLink = '<a href="https://habitica.com/static/front#?memberId=' + obj.id +'" target="_blank">' + obj.profile.nameNotPretty + '</a>'
+				obj.profile.avatar = '.<div id="avatar_' + obj.id + '"></div>.'
 			}
 			if (obj.stats.class == 'wizard')  {
 				obj.stats.classPretty = 'mage'
@@ -3871,6 +3963,9 @@ h2 {
     float: left;
     width: 30em;
 }
+#userApiDetailsForm input[type="checkbox"] {
+    width: auto;
+}
 #userApiDetailsForm fieldset p {
     clear: both;
 }
@@ -3981,7 +4076,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.6)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.7)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -3997,7 +4092,7 @@ table#perMemberStats_participantDetails {
         <p>There was an error obtaining your data.</p>
         <ul class="padded">
 			<li>Check your challenge id is a Challenge Id which is a string of characters similar to your UID. The Challenge ID appears at the end of the URL. Eg. 2ff9822b-27f2-4774-98da-db349b57a38e</li>
-            <li>Please reload the page and then check that your <a href="https://habitica.com/#/options/settings/api">User ID and API Token</a> are correct.</li>
+            <li>Please reload the page and then check that your <a href="https://habitica.com/user/settings/api">User ID and API Token</a> are correct.</li>
             <li>If you're using Internet Explorer, try another browser. <a href="https://www.google.com/intl/en/chrome/browser/">Chrome</a> or <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a> will be more reliable.</li>
             <li>If the page's URL starts with "http://" change it to start with "https://" (or just use <a href="https://oldgods.net/habitica/cTheDragons/challenge.html">this correct link</a>).</li>
             <li>If neither of those help, contact me! See <strong>"Help and Contact Details"</strong> at the bottom of this page.</li>
@@ -4014,6 +4109,28 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.7 - Pretty Pictures<span class="date">2017-10-??</span></dt>
+        <dd><ul>
+	            <li>Features:
+                <ul>
+					<li>Added Avatar Image. Deprecating Avatar link (Not currently available).</li>
+					<li>Updating URL to new website format.</li>
+					<li>Better error with POST functions handling.</li>
+					<li>Direct links to challenge at Habitica</li>
+				</ul> 
+            </li>
+	        <li>Documentation:
+                <ul>
+					<li>Clean up of code.</li>
+					<li>Minor fixes to formatting of check boxes.</li>
+                </ul>
+            </li>		
+	        <li>Bug Fixes:
+                <ul>
+					<li></li>
+               </ul>
+            </li>
+		</ul></dd>	
 		<dt>1.6 - More Lessons in Counting<span class="date">2017-09-11</span></dt>
         <dd><ul>		
             <li>Features:
@@ -4338,7 +4455,7 @@ table#perMemberStats_participantDetails {
     <form id="userApiDetailsForm" method="POST" action="" target="formPasswdSaveFix">
         <fieldset>
             <legend><span class="highlight">Enter your Habitica API details</span>
-            (from the <a href="https://habitica.com/#/options/settings/api">Settings
+            (from the <a href="https://habitica.com/user/settings/api">Settings
              -&gt; API page</a>)
             </legend>
             <label for="userId"><span>User ID</span>
@@ -4398,15 +4515,15 @@ table#perMemberStats_participantDetails {
 
 		<p>Internet Explorer will produce odd results if you use the "Re-Fetch Data" button. Reloading the page will fix the problem. Avoid using that button. Avoiding Internet Explorer will also work.</p>
 		<p>This page will not work correctly on old browsers because it uses modern website features and relies on compliance to standards (both can be lacking in old browsers). <a href="http://browsehappy.com/">Updating your browser is important for general safety on the internet!</a> If you have upgraded your browser to the latest version and are still having problems, please tell me! Contact details are below.</p>
-		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica.</p>
+		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica except actions performed through this website/API..</p>
 
 		<h2>Thank You!</h2>
-		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/#/options/groups/guilds/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/#/options/groups/guilds/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
+		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
 
 		<h2>Help and Contact Details</h2>
-		<p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
-		<p>Code can be source at  <a href="https://github.com/cTheDragons/Habitica-Challenge-Data-Tool">Github<a>. Contributions are welcome. As already stated, any issues please report to  <a href="https://habitica.com/#/options/groups/guilds/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a> for a faster response and to avoid duplication. </p>
-		<p>If you have general questions about Habitica, post them to <a href="https://habitica.com/#/options/groups/tavern">Tavern</a> or <a href="https://habitica.com/#/options/groups/guilds/5481ccf3-5d2d-48a9-a871-70a7380cee5a">Habitica Help: Ask a Question Guild</a>.</p>
+		<p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/groups/guild/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
+		<p>Code can be source at  <a href="https://github.com/cTheDragons/Habitica-Challenge-Data-Tool">Github<a>. Contributions are welcome. As already stated, any issues please report to  <a href="https://habitica.com/groups/guild/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a> for a faster response and to avoid duplication. </p>
+		<p>If you have general questions about Habitica, post them to <a href="https://habitica.com/groups/tavern">Tavern</a> or <a href="https://habitica.com/groups/guild/5481ccf3-5d2d-48a9-a871-70a7380cee5a">Habitica Help: Ask a Question Guild</a>.</p>
     </div>
 	
 	<div id="documentationAndFormClose" class="showHideToggle closer" data-target="documentationAndForm" data-resettoggletext="documentationAndFormToggle">hide documentation / options</div>
