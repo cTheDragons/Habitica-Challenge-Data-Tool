@@ -9,6 +9,7 @@
 
 This code is licensed under the same terms as Habitica:
     https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
+    https://raw.githubusercontent.com/HabitRPG/habitrpg/develop/LICENSE
 
 https://github.com/cTheDragons/Habitica-Challenge-Data-Tool
 
@@ -448,6 +449,7 @@ var userId						= '';
 var apiToken					= '';
 var challengeId 				= ''; //holds selected challenge (drop down)
 var groupId 					= ''; //holds group id from 
+var hideAvatar					= false;
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
@@ -619,9 +621,19 @@ if (debug) console.log('debug enableShowHideToggling');
 ////   Get UUID from URL      ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 var url_vars = getUrlVars();
-if (url_vars.uuid) {
-    $("#userId").val(url_vars.uuid);
+if (url_vars.uuid || url_vars.userId) {
+	if (url_vars.userId) {
+		$("#userId").val(url_vars.userId);
+	} else {
+		$("#userId").val(url_vars.uuid);
+	}	
 	$("#challengeId").val(url_vars.challengeId);
+	if (url_vars.hide_avatar) {
+		$("#hideAvatar").prop("checked", true);
+	} else {
+		$("#hideAvatar").prop("checked", false);
+	}
+	
 }
 function getUrlVars() {
     // Function found at http://stackoverflow.com/questions/4656843/jquery-get-querystring-from-url#answer-4656873
@@ -647,6 +659,7 @@ if (debug) console.log('debug #userApiDetailsForm (Fetch Data)');
     userId   = $('#userId').val();
     apiToken = $('#apiToken').val();
 	challengeId = $('#challengeId').val();
+	hideAvatar = $('#hideAvatar')[0].checked;
 	exportOption = $('#exportOption').val()
     exportFormat = $('#exportFormat').val()
 	if (debugShowObject) console.log('exportFormat: ' + exportFormat );
@@ -1496,23 +1509,6 @@ function parseData() {
 		formatAndDisplayMAIN();
 	}
 	
-	formatAndDisplayAVATAR()
-	
-	
-	function formatAndDisplayAVATAR() {
-		if (debug) console.log('debug avatarGeneration start')
-		if (debugShowObject) console.log(avatarGeneration)
-		
-		//Generates all avatars and display them as required.
-		$.each(avatarGeneration, function(index, obj) {
-			habiticaAvatar.fromUserId(obj.userId, {
-			  container: '#' + obj.divId,
-			  // any other options
-			})
-
-		});
-
-	}
 	
 	//newFetch = false; //done everything now so no need to worry.
 	
@@ -2525,12 +2521,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('obj.' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							//Don't include system messages if chatNotSystemExport
 							if ((obj.uuid != 'system' && obj2.id == 'chatNotSystemExport') || (obj.uuid == 'system' && obj2.id == 'chatSystemExport') || (obj2.id != 'chatNotSystemExport' && obj2.id != 'chatSystemExport')) sectionTables[obj2.id].dataSet.push(addToArray); 
@@ -2859,12 +2849,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('members[obj].' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('members[obj].' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2882,12 +2866,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('obj.' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2906,12 +2884,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('obj.' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2930,12 +2902,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('obj.' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2966,12 +2932,6 @@ function parseData() {
 							addToArray = []; //clear array
 							$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 								addToArray.push(eval('obj.' + obj3))
-								if (obj3.indexOf('avatar') > 0) {
-									var divString = eval('obj.' + obj3)
-									var divUID = divString.slice(-45,-9) //"></div>
-									var divID = divString.slice(10,-9)
-									avatarGeneration.push({divId: divID, userId: divUID})
-								}
 							});
 							sectionTables[obj2.id].dataSet.push(addToArray);
 						}
@@ -2993,12 +2953,6 @@ function parseData() {
 								addToArray = []; //clear array
 								$.each(sectionTables[obj2.id].dataTable, function(index3, obj3){
 									addToArray.push(eval('obj.' + obj3))
-									if (obj3.indexOf('avatar') > 0) {
-										var divString = eval('obj.' + obj3)
-										var divUID = divString.slice(-45,-9) //"></div>
-										var divID = divString.slice(10,-9)
-										avatarGeneration.push({divId: divID, userId: divUID})
-									}
 								});
 								//Don't include system messages if chatNotSystemExport
 								sectionTables[obj2.id].dataSet.push(addToArray); 
@@ -3134,7 +3088,7 @@ function parseData() {
 				obj.profile.namePretty = renderFormattedText(obj.profile.name);
 				obj.profile.nameNotPretty = renderFormattedText(obj.profile.name, {removeParaTags: true});
 				obj.profile.nameLink = '<a href="https://habitica.com/static/front#?memberId=' + obj.id +'" target="_blank">' + obj.profile.nameNotPretty + '</a>'
-				obj.profile.avatar = '.<div id="avatar_' + obj.id + '"></div>.'
+				obj.profile.avatar = createAvatar(obj);
 			}
 			if (obj.stats.class == 'wizard')  {
 				obj.stats.classPretty = 'mage'
@@ -3246,6 +3200,16 @@ function parseData() {
 				};
 		}
 		
+		function createAvatar (user) {
+			if (hideAvatar == false) {
+
+				var wrapper = document.createElement('div');
+				
+				wrapper.appendChild(window.habiticaAvatar({user: user}));
+				
+				return wrapper.innerHTML;
+			}
+		}
 		
 		//////////////////////////////////////////////////////////////////////
 		////   Sections 										   ////////////
@@ -3260,7 +3224,20 @@ function parseData() {
 			var subSectionTitle = ''
 			var subSectionId = ''
 
-		
+			subSectionId = 'SummaryAndCategories'
+			subSectionTitle = 'Summary and Categories'
+			htmlTOCDetail += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
+			html += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'		
+			html += '<p><span class="highlight">Categories:</span> '
+			if (challenge.categories.length > 0 ) {
+				$.each(challenge.categories, function(index, obj){
+					html += toTitleCase((obj.name.replace(/_/g, ' '))) + '&nbsp;&nbsp;&nbsp;&nbsp;' 
+				})
+			} else {
+				html += 'None'
+			}
+			if (challenge.summary != undefined) html += '<p><span class="highlight">Summary:</span> ' + renderFormattedText(challenge.summary) + '</p>'				
+			html += htmlReturnTOC		
 			
 			if (challenge.description != undefined) {
 				subSectionId = 'ChallengeDescription'
@@ -3334,9 +3311,17 @@ function parseData() {
 			htmlTOCDetail += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 			html += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'			
 			
-			if (group.logo != undefined && group.logo != '') html += '<img src="' + group.logo + '" align=right></img>'
+			html += '<h3>Categories</h3><ul>'
+			if (group.categories.length > 0 ) {
+				$.each(group.categories, function(index, obj){
+					html += '<li>' + toTitleCase((obj.name.replace(/_/g, ' '))) + '</li>'
+				})
+			} else {
+				html += 'None'
+			}
+			html += '</ul>'
+			if (group.summary != undefined) html += '<h3>Summary</h3><p> ' + renderFormattedText(group.summary) + '</p>'				
 			if (group.description != undefined) html += '<h3>Description</h3><p>' + renderFormattedText(group.description) + '</p>'
-			if (group.leaderMessage != undefined) html += '<h3>Leader Message</h3><p>' + renderFormattedText(group.leaderMessage) + '</p>'
 			html += '<h3>Leader</h3><p>' + group.leader.profile.nameNotPretty //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
 			html += htmlReturnTOC
 /*			
@@ -4109,14 +4094,19 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
-		<dt>1.7 - Pretty Pictures<span class="date">2017-10-??</span></dt>
+		<dt>1.7 - Pretty Pictures<span class="date">2017-11-10</span></dt>
         <dd><ul>
 	            <li>Features:
                 <ul>
 					<li>Added Avatar Image. Deprecating Avatar link (Not currently available).</li>
+					<li>Added ability to hide Avatar Image for Faster Loading</li>
+					<li>Added Summary and Category information for Challenge.</li>
+					<li>Added Summary and Category information for Guild</li>
+					<li>Remove deprecated Leader Message.</li>
 					<li>Updating URL to new website format.</li>
 					<li>Better error with POST functions handling.</li>
 					<li>Direct links to challenge at Habitica</li>
+					<li>Added hide_avatar as url option.</li>
 				</ul> 
             </li>
 	        <li>Documentation:
@@ -4125,11 +4115,6 @@ table#perMemberStats_participantDetails {
 					<li>Minor fixes to formatting of check boxes.</li>
                 </ul>
             </li>		
-	        <li>Bug Fixes:
-                <ul>
-					<li></li>
-               </ul>
-            </li>
 		</ul></dd>	
 		<dt>1.6 - More Lessons in Counting<span class="date">2017-09-11</span></dt>
         <dd><ul>		
@@ -4465,6 +4450,9 @@ table#perMemberStats_participantDetails {
                 <input type="password" name="apiToken" id="apiToken"/>
             </label>
 			<div id="challengeSelector"></div>
+			<label for="hideAvatar"><span>Hide Avatar Images? (for faster load)</span>
+                <input type="checkbox" name="hideAvatar" id="hideAvatar"/>
+            </label>
 			<div id="exportOptionSelector"></div>
             <input class="div-fetchData" type="submit" value="Fetch Challenge Data" />
 			<p class="highlight">Challenge ID:</p>
@@ -4518,7 +4506,7 @@ table#perMemberStats_participantDetails {
 		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica except actions performed through this website/API..</p>
 
 		<h2>Thank You!</h2>
-		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
+		<p>Thank you to @Alys & Ryan for their code which this is based. Thnak you to Blade who provided me the code for the Avatars. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
 
 		<h2>Help and Contact Details</h2>
 		<p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/groups/guild/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
