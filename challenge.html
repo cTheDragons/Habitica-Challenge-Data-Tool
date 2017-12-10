@@ -1142,6 +1142,14 @@ function fetchData() {
 //////////////////////////////////////////////////////////////////////
 ////  Post Private Message			    //////////////////////////////
 //////////////////////////////////////////////////////////////////////
+function postMessageOwner() {
+	if (debug) console.log('debug postMessageOwner start');
+	
+	var rowData = [[challenge.leader.id, challenge.leader.profile.nameNotPretty]]
+	
+	postMessageUser(rowData, 0, 1)
+}
+
 function postMessageUser(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postMessageUser start');
 	if (debugShowObject) console.log(rowData)
@@ -1470,7 +1478,13 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		
 	}
 }	
-	
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+////  Parse Data			    //////////////////////////////
+//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////	
 function parseData() {
 	if (debug) console.log('debug parseData start');
 
@@ -1741,6 +1755,9 @@ function parseData() {
 		var displayLeaderName = challenge.leader.profile.nameNotPretty;
 		var displayGuildName = challenge.group.nameLink;
 		var displayCreated = challenge.creation.dateAndTime;
+		var buttonMsgOwner = ''
+		if (challenge.leader.id != userId) buttonMsgOwner = '<input id="msgOwner" type="submit" value="Message Owner" />'
+		
 		if (challenge.group.name != group.name) displayGuildName += ' (Guild Chat: ' + group.nameLink + ')'
 		
 		$('#headerGroupExtras').html('<div id="challengeNameDisplay">' + displayChallengeName + '</div>' +
@@ -1749,8 +1766,14 @@ function parseData() {
 				'&nbsp;&nbsp;&nbsp;&nbsp;Created: ' + displayCreated +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Guild: ' + displayGuildName +
 				'&nbsp;&nbsp;&nbsp;&nbsp;Id: <a href="' + serverHabiticaChallenge + challengeId + '">' + challengeId + '</a> ' +
+				'&nbsp;&nbsp;&nbsp;&nbsp;' + buttonMsgOwner +
 				'</div>'  
 		);
+		if (challenge.leader.id != userId) {
+			$('#msgOwner').click(function(event){
+				postMessageOwner();
+			});
+		}
 	}
 	
 	//////////////////////////////////////////////////////////////////////
@@ -3225,9 +3248,10 @@ function parseData() {
 			var subSectionId = ''
 
 			subSectionId = 'SummaryAndCategories'
-			subSectionTitle = 'Summary and Categories'
+			subSectionTitle = 'Summary, Categories and Owner'
 			htmlTOCDetail += '<li><a href="#' + 'toc_' + subSectionId + '_' + sectionId  + '" target="_self">' + subSectionTitle + '</a></li>'
 			html += '<h3 id="' + 'toc_' + subSectionId + '_' + sectionId +'">' + subSectionTitle + '</h3>'		
+			html += '<p><span class="highlight">Owner:</span> ' + challenge.leader.profile.nameNotPretty + ' (UserId: ' + challenge.leader.id + ')'
 			html += '<p><span class="highlight">Categories:</span> '
 			if (challenge.categories.length > 0 ) {
 				$.each(challenge.categories, function(index, obj){
@@ -3322,7 +3346,7 @@ function parseData() {
 			html += '</ul>'
 			if (group.summary != undefined) html += '<h3>Summary</h3><p> ' + renderFormattedText(group.summary) + '</p>'				
 			if (group.description != undefined) html += '<h3>Description</h3><p>' + renderFormattedText(group.description) + '</p>'
-			html += '<h3>Leader</h3><p>' + group.leader.profile.nameNotPretty //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
+			html += '<h3>Leader</h3><p>' + group.leader.profile.nameNotPretty + ' (UserId: ' + group.leader.id + ')' //+ ' (Last Active: ' + members[group.leader.id].lastActive.relativeTime + ') </p>'
 			html += htmlReturnTOC
 /*			
 			//Chat
@@ -4061,7 +4085,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.7)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.8)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4094,9 +4118,18 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>1.8 - Message the Owner<span class="date">2017-11-10</span></dt>
+        <dd><ul>
+	        <li>Features:
+                <ul>
+					<li>Added Feature to Message the owner directly from the Challenge Tool.</li>
+					<li>Showed User Ids for Owners and Guild Leaders in the Overview.</li>
+				</ul>
+            </li>		
+		</ul></dd>	
 		<dt>1.7 - Pretty Pictures<span class="date">2017-11-10</span></dt>
         <dd><ul>
-	            <li>Features:
+	        <li>Features:
                 <ul>
 					<li>Added Avatar Image. Deprecating Avatar link (Not currently available).</li>
 					<li>Added ability to hide Avatar Image for Faster Loading</li>
