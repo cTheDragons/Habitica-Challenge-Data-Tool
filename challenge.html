@@ -39,7 +39,7 @@ Contributors:
 	<script src="https://code.jquery.com/jquery-1.12.3.js"></script> <!--- jquery -->
 	<script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script> <!--- time functions -->
 	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
-	<script src="js/habitica-avatar.js"></script>  <!--- Avatar Generation -->
+	<script src="js/habitica-avatar.js"></script>  <!--- Avatar Generation https://github.com/crookedneighbor/habitica-avatar -->
 	<script src="js/lodash.js"></script> <!--lodash / copy objects -->
 	
 
@@ -69,7 +69,6 @@ var membersTaskHistory; //holds information per completion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups 
 var memberIdSelection; //holds membersIdSelection
 var userIsAdmin; //holds if the user is an Admin or not
-var avatarGeneration = [];
 var newFetch; //holds if first fetch (therefore tables to be built and random member etc) is requried.
 
 //////////////////////////////////////////////////////////////////////
@@ -248,8 +247,8 @@ sectionTables['membersTaskHistory'] = {
 sectionTables['chatExport'] = {
 	type: 'chat',
 	dataSet: [], 
-	dataSetHeader: ['Message Id', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Participant Likes', 'Text'], 
-	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInGroup', 'textPretty'],
+	dataSetHeader: ['Message Id', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Participant Likes', 'Text', 'Appearance'], 
+	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty', 'userStylesPretty'],	
 	babyBear: {show: [2,7,9,11], orderBy: [[7, 'desc']]},
 	mamaBear: {show: [2,3,4,7,9,10,11], orderBy: [[7, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[7, 'desc']]},
@@ -271,8 +270,8 @@ sectionTables['chatExport'] = {
 sectionTables['chatNotSystemExport'] = {
 	type: 'chat',
 	dataSet: [], 
-	dataSetHeader: ['Message Id', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Participant Likes', 'Text'], 
-	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInGroup', 'textPretty'],
+	dataSetHeader: ['Message Id', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Participant Likes', 'Text', 'Appearance'], 
+	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty', 'userStylesPretty'],
 	babyBear: {show: [2,7,9,11], orderBy: [[7, 'desc']]},
 	mamaBear: {show: [2,3,4,7,9,10,11], orderBy: [[7, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[7, 'desc']]},
@@ -295,7 +294,7 @@ sectionTables['chatSystemExport'] = {
 	type: 'chat',
 	dataSet: [], 
 	dataSetHeader: ['Message Id', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Likes', 'Participant Likes', 'Text'], 
-	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInGroup', 'textPretty'],
+	dataTable: ['id', 'uuid', 'userNotPretty', 'contribPretty.level', 'contribPretty.text', 'contribPretty.contributions', 'contribPretty.admin', 'creation.shortDate', 'timestamp', 'likeCount.total', 'likeCount.totalInChallenge', 'textPretty'],
 	babyBear: {show: [2,7,9,11], orderBy: [[7, 'desc']]},
 	mamaBear: {show: [2,3,4,7,9,10,11], orderBy: [[7, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[7, 'desc']]},
@@ -311,8 +310,8 @@ sectionTables['chatSystemExport'] = {
 sectionTables['chatLikes'] = {
 	type: 'chatLikes',
 	dataSet: [], 
-	dataSetHeader: ['Message Id', 'Like Id', 'Like Name', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text'], 
-	dataTable: ['chat.id', 'id', 'nameNotPretty', 'chat.uuid', 'chat.userNotPretty', 'chat.contribPretty.level', 'chat.contribPretty.text', 'chat.contribPretty.contributions', 'chat.contribPretty.admin', 'chat.creation.shortDate', 'chat.timestamp', 'chat.textPretty'],
+	dataSetHeader: ['Message Id', 'Like Id', 'Like Name', 'User Id', 'User', 'Tier', 'Contributor', 'Contributions', 'Mod', 'Posted', 'Epoch', 'Text', 'Appearance'], 
+	dataTable: ['chat.id', 'id', 'nameNotPretty', 'chat.uuid', 'chat.userNotPretty', 'chat.contribPretty.level', 'chat.contribPretty.text', 'chat.contribPretty.contributions', 'chat.contribPretty.admin', 'chat.creation.shortDate', 'chat.timestamp', 'chat.textPretty', 'userStylesPretty'],
 	babyBear: {show: [2,4,9,11], orderBy: [[9, 'desc']]},
 	mamaBear: {show: [1,2,3,4,9,11], orderBy: [[9, 'desc']]},
 	papaBear: {show: ['all'], orderBy: [[9, 'desc']]},
@@ -453,6 +452,7 @@ var hideAvatar					= false;
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
+var ajaxTryAgainMax				= 3;
 var debug						= false;
 var debugShowObject				= false;
 
@@ -621,20 +621,63 @@ if (debug) console.log('debug enableShowHideToggling');
 ////   Get UUID from URL      ////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 var url_vars = getUrlVars();
-if (url_vars.uuid || url_vars.userId) {
-	if (url_vars.userId) {
-		$("#userId").val(url_vars.userId);
-	} else {
-		$("#userId").val(url_vars.uuid);
-	}	
+if (url_vars.hasOwnProperty("userId")) {
+	$("#userId").val(url_vars.userId);
+} else if (url_vars.hasOwnProperty("userid")) {
+	$("#userId").val(url_vars.uuid);
+} else if (url_vars.hasOwnProperty("uuid")) {
+	$("#userId").val(url_vars.uuid);
+}
+if (url_vars.hasOwnProperty("challengeId")) {
 	$("#challengeId").val(url_vars.challengeId);
-	if (url_vars.hide_avatar) {
+} else if (url_vars.hasOwnProperty("challengeid")) {
+	$("#challengeId").val(url_vars.challengeId);
+}
+if (url_vars.hasOwnProperty("hide_avatar")) {
+	if ((url_vars.hide_avatar == "checked") || (url_vars.hide_avatar == "true"))
 		$("#hideAvatar").prop("checked", true);
-	} else {
+	else {
 		$("#hideAvatar").prop("checked", false);
 	}
-	
 }
+if (url_vars.hasOwnProperty("hide_avatars")) {
+	if ((url_vars.hide_avatars == "checked") || (url_vars.hide_avatars == "true"))
+		$("#hideAvatar").prop("checked", true);
+	else {
+		$("#hideAvatar").prop("checked", false);
+	}
+}
+if (url_vars.hasOwnProperty("hideavatar")) {
+	if ((url_vars.hideavatar == "checked") || (url_vars.hideavatar == "true"))
+		$("#hideAvatar").prop("checked", true);
+	else {
+		$("#hideAvatar").prop("checked", false);
+	}
+}
+if (url_vars.hasOwnProperty("hideAvatar")) {
+	if ((url_vars.hideAvatar == "checked") || (url_vars.hideAvatar == "true"))
+		$("#hideAvatar").prop("checked", true);
+	else {
+		$("#hideAvatar").prop("checked", false);
+	}
+}
+
+if (url_vars.hasOwnProperty("bear")) {
+		$("#exportOption").val(url_vars.bear + "Bear");
+}
+if (url_vars.hasOwnProperty("porridge")) {
+	var selectedPorridge = exportFormat
+
+	$.each(exportFormats, function(index, obj){
+		if (url_vars.porridge == obj.shortDesc.replace(' Porridge', '').toLowerCase()) {
+			selectedPorridge = obj.id;
+		}
+	});	
+	
+	$("#exportFormat").val(selectedPorridge);
+}
+
+
 function getUrlVars() {
     // Function found at http://stackoverflow.com/questions/4656843/jquery-get-querystring-from-url#answer-4656873
     var vars = [], hash;
@@ -777,12 +820,14 @@ function fetchData() {
 	members = []; // clear from previous fetches
 	membersChallenge = []; // clear from previous fetches
 	
+	var listToFetch = [];
 	var lastMemberIndex = 0 // clear from previous fetches
 	var lastMemberChallengeIndex = 0 // clear from previous fetches
 	
     var ajaxRunningCount = 4; // drops to 0 when all calls have succeeded
 	var ajaxRunningCount_Group = 1;
-
+	var ajaxTryAgain = 0;
+	var ajaxTryAgainNeed = 0;
 	
     // fetch the user's own content (guilds, parties):
 	$('#loading #statusFetch').text('Asking for User Data');
@@ -1010,7 +1055,7 @@ function fetchData() {
 					xhr.setRequestHeader('x-api-key',  apiToken);
 			},
 			success: fetchMemberListSuccess,
-			error: fetchFailure
+			error: fetchMemberListFailure
 		});
 	}
 
@@ -1028,6 +1073,7 @@ function fetchData() {
 			} else {
 				//Still more members to get
 				lastListMemberId = memberListToFetch[memberListToFetch.length -1]._id;
+				ajaxTryAgain = 0; //Clear out previous count.
 				fetchMemberList()
 			}	
 		} else {
@@ -1037,22 +1083,57 @@ function fetchData() {
 		}
 	}	
 		
-		
+	function fetchMemberListFailure() {
+		if (debug) console.log('debug Member List Fail Start');
+		ajaxTryAgain++
+		if (ajaxTryAgain < ajaxTryAgainMax) {
+			fetchMemberList()
+		} else {
+			fetchFailure()
+		}
+	}
+	
 	function fetchMembers(){
 
-		if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + lastMemberIndex + ')');
 		
-		if (debugShowObject) console.log(memberListToFetch[lastMemberIndex].id);
+		if (ajaxTryAgainNeed > 0)  { 
+			if (debug) console.log('debug MEMBER DATA - Looks like we missed some stray ducks (' + ajaxTryAgainNeed + ')');
+	
+			//need to find the missing members
+			var ajaxTryAgainList = []
+			
+			$.each(memberListToFetch, function(index, obj){
+				if (members[obj.id] == undefined) {
+					ajaxTryAgainList.push(obj)
+				} else if (membersChallenge[obj.id] == undefined) {
+					ajaxTryAgainList.push(obj)
+				}		
+			});
+			
+			ajaxTryAgainNeed = 0 
+			
+			ajaxTryAgain++ 
+			
+			listToFetch = ajaxTryAgainList
+			
+		} else {
+			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + lastMemberIndex + ')');
+			if (debugShowObject) console.log(memberListToFetch[lastMemberIndex].id);
 
+			//Do a quick loop so we can check if leader is needed $$$I'm sure there is a better way but it is late
+			memberListToFetch_idOnly = []
+			$.each(memberListToFetch, function(index, obj){
+				memberListToFetch_idOnly.push(obj.id)
+			});
+			
+			listToFetch = memberListToFetch
+		}
 		
-		//Do a quick loop so we can check if leader is needed $$$I'm sure there is a better way but it is late
-		memberListToFetch_idOnly = []
-		$.each(memberListToFetch, function(index, obj){
-			memberListToFetch_idOnly.push(obj.id)
-		});
-
+		if (debugShowObject) console.log(listToFetch.length)
+		lastMemberIndex = 0
+		lastMemberChallengeIndex = 0
 		
-		$.each(memberListToFetch, function(index, obj){
+		$.each(listToFetch, function(index, obj){
 			$('#loading #statusFetch').text('Asking for Member Data ... (This can take a while)') ;
 			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + obj.id + ')');
 			$.ajax({
@@ -1089,6 +1170,7 @@ function fetchData() {
 		if (debug) console.log('debug Member Fail Fetch for ' + (lastMemberIndex+1))
 		// $$$ Put up error message?????			
 		lastMemberIndex++
+		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
 		checkMemberAllFetch()
 	}
 			
@@ -1109,6 +1191,7 @@ function fetchData() {
 		// $$$ Put up error message?????			
 		
 		lastMemberChallengeIndex++
+		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
 		checkMemberAllFetch()
 	}
 			
@@ -1124,11 +1207,16 @@ function fetchData() {
 	}
 	
 	function checkMemberAllFetch() {
-		if ((lastMemberIndex == memberListToFetch.length) && (lastMemberChallengeIndex == memberListToFetch.length)) { // all ajax calls have finished
-			$('#loading #statusFetch').text('Preparing to Display the Data');
-			if (debugShowObject) console.log(members);
-			if (debugShowObject) console.log(membersChallenge);
-			parseData();
+		if ((lastMemberIndex == listToFetch.length) && (lastMemberChallengeIndex == listToFetch.length)) { // all ajax calls have finished
+			if (debug) console.log('debug Lost ducks ' + (ajaxTryAgainNeed))
+			if (ajaxTryAgainNeed > 0) {
+				fetchMembers()
+			} else {	
+				$('#loading #statusFetch').text('Preparing to Display the Data');
+				if (debugShowObject) console.log(members);
+				if (debugShowObject) console.log(membersChallenge);
+				parseData();
+			}
 		} 
 	}
 
@@ -2202,9 +2290,7 @@ function parseData() {
 	//     All data is modified here
     //////////////////////////////////////////////////////////////////////
 		
-		function formatAllDataAndCollate() {
-			avatarGeneration = []; //List of Avatar to generate
-		
+		function formatAllDataAndCollate() {		
 			var addToArray = []; //Used to create final array to add to dataSet
 			var tempMembersList = []; //For looping through each members and adding missing variables
 			var tempQuestsList = []; //For looping through each quests and adding missing variables
@@ -2998,9 +3084,15 @@ function parseData() {
 			if (obj.uuid == 'system') {
 				obj.userNotPretty = 'System'
 				obj.userNotPretty = 'System'
+				obj.userStylesPretty = ''
 			} else {
 				obj.userNotPretty = renderFormattedText(obj.user);
 				obj.userNotPretty = renderFormattedText(obj.user, {removeParaTags: true});
+				if (obj.userStyles != undefined) {
+					obj.userStylesPretty = JSON.stringify(obj.userStyles, null, ' ').replace(/: \{\n\s+/g, ': {').replace(/",\n\s+/g, ', ').replace(/"\n\s+\}/g, '}').replace(/(\r\n|\n|\r)/g,"<br />").replace(/"  "/g, '&nbsp;&nbsp');;
+				} else {
+					obj.userStylesPretty = ''
+				}
 			}
 			obj.creation  = reformatDate(obj.timestamp);
 			//if (debugShowObject) console.log(obj);
@@ -4049,7 +4141,7 @@ ul#tableOfContents > li {
 ****   Specific Sections   *******************************************
 *********************************************************************/
 #MAIN > * {
-    display: none; // all sections hidden by default
+    display: none; /* all sections hidden by default */
 }
 
 
@@ -4085,7 +4177,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v1.8)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v2.0)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4118,6 +4210,27 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>2.0 - Bag full of Goodies<span class="date">2018-04-30</span></dt>
+        <dd><ul>
+	        <li>Features:
+                <ul>
+					<li>Added the ability to handle timeouts when fetching members and list of members.</li>
+					<li>Hide Avatar images now on as default to avoid memory issues.</li>
+					<li>Added other url parameters, bear and porridge.</li>
+					<li>Added json of appearance to chat.</li>				
+				</ul> 
+			<li>Documentation:
+                <ul>
+					<li>Fix thanks for Blade. (Link to code supplied).</li>
+                </ul>
+			<li>Bug Fixes:
+                <ul>
+					<li>Url parameters apply independent of whether or not the user id parameter is supplied. (Thank you @Accio Books!)</li>
+					<li>Checkbox url parameters can be set to false.</li>
+					<li>Put back Participants likes.</li>
+               </ul>
+            </li>	
+		</ul></dd>	
 		<dt>1.8 - Message the Owner<span class="date">2017-12-10</span></dt>
         <dd><ul>
 	        <li>Features:
@@ -4484,7 +4597,7 @@ table#perMemberStats_participantDetails {
             </label>
 			<div id="challengeSelector"></div>
 			<label for="hideAvatar"><span>Hide Avatar Images? (for faster load)</span>
-                <input type="checkbox" name="hideAvatar" id="hideAvatar"/>
+                <input type="checkbox" name="hideAvatar" id="hideAvatar" checked/>
             </label>
 			<div id="exportOptionSelector"></div>
             <input class="div-fetchData" type="submit" value="Fetch Challenge Data" />
@@ -4539,7 +4652,7 @@ table#perMemberStats_participantDetails {
 		<p>Regardless of what bugs there might be, this page cannot damage your account. It does not contain any code that could result in any changes being made on Habitica except actions performed through this website/API..</p>
 
 		<h2>Thank You!</h2>
-		<p>Thank you to @Alys & Ryan for their code which this is based. Thnak you to Blade who provided me the code for the Avatars. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
+		<p>Thank you to @Alys & Ryan for their code which this is based. Thank you to Blade who provided me the code for the <a href="https://github.com/crookedneighbor/habitica-avatar">Avatars<a> both the js and implementation here. Thank you all in the <a href="https://habitica.com/groups/guild/349a36c3-66f3-4bf8-91b6-475056d9b6bb">Javascript</a> and <a href="https://habitica.com/groups/guild/2ff9822b-27f2-4774-98da-db349b57a38e">Aspiring Comrades</a> in answering my newbie questions. <p> 
 
 		<h2>Help and Contact Details</h2>
 		<p>This page has been created by <a href="http://habitica.wikia.com/wiki/User:CTheDragons">cTheDragons</a>. If you have questions, problems, or suggestions, you're welcome to contact me, although I cannot guarantee that I'll always be able to spend a lot of time on this. You can contact me at <a href="https://habitica.com/groups/guild/d9a0ec1e-352b-4697-a5d5-fb45c98fb4a3">Testing & Bug Squashing for Dragon Tools</a>. I tend to ignore emails & PMs.</p>
