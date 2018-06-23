@@ -2753,7 +2753,7 @@ function parseData() {
 					if (obj2.history == undefined) {
 						obj2.history = []
 					}
-/*					
+					
 					if (obj2.completed) {
 						if (obj2.dateCompleted != undefined) {
 							var tempDate = myDateConverter(obj2.dateCompleted, 'epoch')
@@ -2764,9 +2764,9 @@ function parseData() {
 					
 						addToArray = {};
 						addToArray = {date: tempDate, value: obj2.value}
-						if ((obj2.type != 'daily') || !(members[obj.id].preferences.sleep)) if ((obj2.history.length == 0) || (obj2.history[obj2.history.length-1].date != tempDate)) obj2.history.push(addToArray)						
+						if (obj2.history.length == 0) obj2.history.push(addToArray)						
 					}
-*/				
+				
 
 					var tempValuePrev = 0
 					var tempDatePrev = obj2.creation
