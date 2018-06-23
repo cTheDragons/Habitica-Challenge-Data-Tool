@@ -2774,7 +2774,7 @@ function parseData() {
 					$.each(obj2.history, function(index3, obj3){
 						modifyTaskHistoryProperties(obj3)
 						
-						if (obj2.habit == 'habit') {
+						if (obj2.type == 'habit') {
 							obj3.clickup = obj3.scoredUp
 							obj3.clickdown = obj3.scoredDown
 							obj3.total = obj3.scoredUp + obj3.scoredDown
@@ -2792,7 +2792,7 @@ function parseData() {
 						
 						
 						
-						if (obj2.habit == 'habit') {
+						if (obj2.type == 'habit') {
 								obj2.challengeStats.countPositive += obj3.clickup
 								members[obj.id].challengeStats.countPositive += obj3.clickup
 								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += obj3.clickup
