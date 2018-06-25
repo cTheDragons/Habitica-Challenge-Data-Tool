@@ -234,7 +234,7 @@ sectionTables['membersTaskHistory'] = {
 	subTitle: function (){
 		var html = ''
 		html += sectionCompletionStats()
-		html += 'Daily completed before cron will show the cron time as the completion date. If the member is resting in the Inn no activity will be recorded.'
+		html += 'Habits clicks are summaries per day stats. The click date/time clicked is the last time it was clicked for that day.'
 		html += sectionHeadingLeadership()
 		return html 
 	},
@@ -386,7 +386,7 @@ function sectionHeadingLeadership() {
 
 function sectionCompletionStats() {
 		html = ''
-		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as Max of 1.'
+		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as there is only a Max of 1. Dailies will not record if user is the inn. Daily streaks will also not break if user completes the daily then misses a day and then completes a day after.'
 		return html
 }			
 			
@@ -4271,15 +4271,15 @@ table#perMemberStats_participantDetails {
         <dd><ul>
 	        <li>Features:
                 <ul>
-					<li> </li>
+					<li>Modifying code to handle new habit recording structure. 1 tick per day.</li>
 				</ul> 
 			<li>Documentation:
                 <ul>
-					<li></li>
+					<li>Fixing notes to match new habit structure and how dailies histoyr are recorded.</li>
                 </ul>
 			<li>Bug Fixes:
                 <ul>
-					<li> </li>
+					<li>Removing the duplicate for completed in dailies.</li>
                </ul>
             </li>	
 		</ul></dd>	
@@ -4714,6 +4714,7 @@ table#perMemberStats_participantDetails {
 		<ul>
 			<li>Section to choose winners by Daily/All Task Completed/Most Positive Ticks etc</li>
 			<li>Column Filtering (as opposed to single search box)</li>
+			<li>Multi line text box for PMs and chat messages.</li>
 			<li><span class="subheading">Other Stuff?</span>: Send me ideas! Contact details are below.</li>
 		</ul>
 
