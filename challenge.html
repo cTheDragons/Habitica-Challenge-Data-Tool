@@ -2774,67 +2774,60 @@ function parseData() {
 					
 					$.each(obj2.history, function(index3, obj3){
 						modifyTaskHistoryProperties(obj3)
+					
 						
 						if (obj2.type == 'habit') {
 							obj3.clickup = obj3.scoredUp
 							obj3.clickdown = obj3.scoredDown
 							obj3.total = obj3.scoredUp + obj3.scoredDown
+
+							obj2.challengeStats.countPositive += obj3.clickup
+							members[obj.id].challengeStats.countPositive += obj3.clickup
+							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += obj3.clickup
+							challenge.challengeStats.countPositive += obj3.clickup
+							
+							obj2.challengeStats.countNegative += obj3.clickdown
+							members[obj.id].challengeStats.countNegative += obj3.clickdown
+							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += obj3.clickdown
+							challenge.challengeStats.countNegative += obj3.clickdown
+
+							if (obj3.clickdown == 0) {
+								obj2.challengeStats.streak.current += obj3.clickup
+							} else if (obj3.clickup == 0) {
+								obj2.challengeStats.streakNeg.current += obj3.clickdown		
+							}
+							
+							if (obj3.clickup != 0) {
+								if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+								if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+
+								obj2.challengeStats.streakNeg.current = 0						
+							}
+							
+							if (obj3.clickdown != 0) {
+								if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
+								if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
+									
+								obj2.challengeStats.streak.current = 0
+							}
+							
+
 						} else {
-							obj3.clickup = 1
-							obj3.clickdown = 0
+						
 							obj3.total = 1
-						}
 						
-						//Completion Streak
-						obj2.challengeStats.count += obj3.total
-						members[obj.id].challengeStats.count += obj3.total
-						if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.count += obj3.total
-						challenge.challengeStats.count += obj3.total
-						
-						
-						
-						if (obj2.type == 'habit') {
-								obj2.challengeStats.countPositive += obj3.clickup
-								members[obj.id].challengeStats.countPositive += obj3.clickup
-								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += obj3.clickup
-								challenge.challengeStats.countPositive += obj3.clickup
-								
-								obj2.challengeStats.countNegative += obj3.clickdown
-								members[obj.id].challengeStats.countNegative += obj3.clickdown
-								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += obj3.clickdown
-								challenge.challengeStats.countNegative += obj3.clickdown
-
-								if (obj3.clickdown == 0) {
-									obj2.challengeStats.streak.current += obj3.clickup
-								} else if (obj3.clickup == 0) {
-									obj2.challengeStats.streakNeg.current += obj3.clickdown		
-								}
-								
-								if (obj3.clickup != 0) {
-									if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-									if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-
-									obj2.challengeStats.streakNeg.current = 0						
-								}
-								
-								if (obj3.clickdown != 0) {
-									if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
-									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
-									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
-									if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
-									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
-									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
-										
-									obj2.challengeStats.streak.current = 0
-								}
-								
-
-						} else {
 							if ((obj3.value > tempValuePrev && !(obj2.type == 'habit' && obj2.up == false)) ||  (obj2.type == 'habit' && obj2.down == false) ||  (obj2.type == 'todo') || ((obj3.value == tempValuePrev) && (obj2.type != 'daily'))) {
+								obj3.clickup = 1
+								obj3.clickdown = 0
+
 								obj2.challengeStats.countPositive += 1
 								members[obj.id].challengeStats.countPositive += 1
 								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += 1
@@ -2852,6 +2845,9 @@ function parseData() {
 								obj2.challengeStats.streakNeg.current = 0
 								
 							} else if ((obj3.value < tempValuePrev && !(obj2.type == 'habit' && obj2.down == false)) || (obj2.type == 'habit' && obj2.up == false) ) {
+								obj3.clickup = 0
+								obj3.clickdown = 1
+
 								obj2.challengeStats.countNegative += 1
 								members[obj.id].challengeStats.countNegative += 1
 								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += 1
@@ -2878,6 +2874,13 @@ function parseData() {
 						}
 						
 						
+						//Completion Streak
+						obj2.challengeStats.count += obj3.total
+						members[obj.id].challengeStats.count += obj3.total
+						if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.count += obj3.total
+						challenge.challengeStats.count += obj3.total
+						
+							
 						//first & last Active
 						if (obj2.challengeStats.first.utcTime > obj3.datePretty.utcTime || obj2.challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) obj2.challengeStats.first = obj3.datePretty 
 						if (members[obj.id].challengeStats.first.utcTime > obj3.datePretty.utcTime || members[obj.id].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) members[obj.id].challengeStats.first = obj3.datePretty 
@@ -4234,7 +4237,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v2.1)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v2.2)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4267,6 +4270,14 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>2.2 - Bad Daily Habit<span class="date">2018-06-25</span></dt>
+        <dd><ul>
+			<li>Bug Fixes:
+                <ul>
+					<li>Fixing negative click count for missed dailies in All Task History.</li>
+               </ul>
+            </li>	
+		</ul></dd>	
 		<dt>2.1 - No More Time for Habits<span class="date">2018-06-25</span></dt>
         <dd><ul>
 	        <li>Features:
@@ -4275,7 +4286,7 @@ table#perMemberStats_participantDetails {
 				</ul> 
 			<li>Documentation:
                 <ul>
-					<li>Updating notes to match new habit structure and how dailies history are recorded (now actual dates).</li>
+					<li>Updating notes to match new habit structure and how dailies history are recorded (now actual date time of when daily was ticked, not cron time).</li>
                 </ul>
 			<li>Bug Fixes:
                 <ul>
