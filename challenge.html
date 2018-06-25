@@ -234,7 +234,7 @@ sectionTables['membersTaskHistory'] = {
 	subTitle: function (){
 		var html = ''
 		html += sectionCompletionStats()
-		html += 'Habits clicks are summaries per day stats. The click date/time clicked is the last time it was clicked for that day.'
+		html += 'Habits''' + ' clicks are summaries per day stats. The click date/time clicked is the last time it was clicked for that day.'
 		html += sectionHeadingLeadership()
 		return html 
 	},
@@ -379,14 +379,14 @@ function sectionHeadingLeadership() {
 		html = ''
 		if ((userId == challenge.leader.id) || (userIsAdmin)) {
 			var userGemAmount = user.balance * 4 
-			html += '<p>To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting.</p>'
+			html += '<p>To select records in bulk select the first and then hold down the shift key to select the last record. To select multiples hold down the ctrl key while selecting. </p>'
 		}
 		return html
 }
 
 function sectionCompletionStats() {
 		html = ''
-		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as there is only a Max of 1. Dailies will not record if user is the inn. Daily streaks will also not break if user completes the daily then misses a day and then completes a day after.'
+		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as there is only a Max of 1. Dailies will not record regardless if completed or missed, if participant is the inn at the time of cron. Dailies''' + ' streaks will also not break if user completes the daily then misses one or more days and then completes a day after. '
 		return html
 }			
 			
@@ -453,8 +453,8 @@ var exportOption 			 	= 'babyBear';
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
 var ajaxTryAgainMax				= 3;
-var debug						= true;
-var debugShowObject				= true;
+var debug						= false;
+var debugShowObject				= false;
 
 
 if (debug || debugShowObject) serverName = '*** TURN DEBUG OFF! *** - ' + serverName
@@ -4320,7 +4320,7 @@ table#perMemberStats_participantDetails {
 					<li>Added Avatar Image. Deprecating Avatar link (Not currently available).</li>
 					<li>Added ability to hide Avatar Image for Faster Loading</li>
 					<li>Added Summary and Category information for Challenge.</li>
-					<li>Added Summary and Category information for Guild</li>
+					<li>Added ary and Category information for Guild</li>
 					<li>Remove deprecated Leader Message.</li>
 					<li>Updating URL to new website format.</li>
 					<li>Better error with POST functions handling.</li>
