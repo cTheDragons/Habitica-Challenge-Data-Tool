@@ -386,7 +386,7 @@ function sectionHeadingLeadership() {
 
 function sectionCompletionStats() {
 		html = ''
-		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as there is only a Max of 1. Dailies will not record regardless if completed or missed, if participant is the inn at the time of cron. Dailies streaks will also not break if user completes the daily then misses one or more days and then completes a day after. '
+		html += 'Time Difference is represented in hours. To Do Streaks are not shown in Min/Max Streaks as there is only a Max of 1. Dailies will not record regardless if completed or missed, if participant is the inn (pause dailies is activated) at the time of cron. Dailies streaks will also not break if user completes the daily then misses one or more days and then completes a day after. '
 		return html
 }			
 			
@@ -421,7 +421,7 @@ var warningMessage				= 	'PLEASE ENSURE YOUR MESSAGE IS:\n' +
 									'\nIf you have any concerns, please email Lemoness (leslie@habitica.com) for clarification.'
 
 var serverName					= 'Habitica'; // used in "loading" message
-var serverUrl					= 'https://habitrpg-beta.herokuapp.com/api/v3';
+var serverUrl					= 'https://habitica.com/api/v3';
 var serverPathContent			= '/content?language=en';
 var serverPathUser				= '/user';
 var serverPathChallengeForUser  = '/challenges/user'
