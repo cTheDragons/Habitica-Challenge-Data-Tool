@@ -2803,9 +2803,11 @@ function parseData() {
 					
 					$.each(obj2.history, function(index3, obj3){
 						modifyTaskHistoryProperties(obj3)
-					
 						
 						if (obj2.type == 'habit') {
+							if (obj3.scoredUp == undefined) obj3.scoredUp = 0 //Maybe we should check values if up or down but the is old data.
+							if (obj3.scoredDown == undefined) obj3.scoredDown = 0 //Maybe we should check values if up or down but the is old data.
+						
 							obj3.clickup = obj3.scoredUp
 							obj3.clickdown = obj3.scoredDown
 							obj3.total = obj3.scoredUp + obj3.scoredDown
@@ -3242,15 +3244,15 @@ function parseData() {
 				obj.usernamePretty = 'System'
 				obj.userStylesPretty = ''
 			} else {
-				obj.userPretty = renderFormattedText(obj.user);
-				obj.userNotPretty = renderFormattedText(obj.user, {removeParaTags: true});
+				obj.userPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + renderFormattedText(obj.user) + '</a>';
+				obj.userNotPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + renderFormattedText(obj.user, {removeParaTags: true}) + '</a>';
 				if (obj.username == undefined) {
 					obj.username = noUsernamePrefix + obj.user
 					obj.usernameNotPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + noUsernamePrefix + obj.user + '</a>';
 				} else {
 					obj.usernameNotPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + obj.username + '</a>';
 				}
-				obj.usernamePretty = usernameNotPretty
+				obj.usernamePretty = obj.usernameNotPretty
 				
 				if (obj.userStyles != undefined) {
 					obj.userStylesPretty = JSON.stringify(obj.userStyles, null, ' ').replace(/: \{\n\s+/g, ': {').replace(/",\n\s+/g, ', ').replace(/"\n\s+\}/g, '}').replace(/(\r\n|\n|\r)/g,"<br />").replace(/"  "/g, '&nbsp;&nbsp');;
@@ -4307,7 +4309,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v2.3)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v3.0)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4340,7 +4342,7 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
-		<dt>3.0 - Roses & Clunky Lines<span class="date">2019-04-29</span></dt>
+		<dt>3.0 - Roses & Clunky Lines<span class="date">2019-05-01</span></dt>
         <dd><ul>
  			<li>Features:
                 <ul>
@@ -4352,11 +4354,14 @@ table#perMemberStats_participantDetails {
 			<li>Documentation:
                 <ul>
 					<li>Updated reference & email for spam to generic Admin.</li>
+					<li>Ensure display name and username displayed in non grid data.</li>
+					<li>Username only on Baby grid data.</li>
                 </ul>
             </li>
 			<li>Bug Fixes:
                 <ul>
 					<li>Able to display data if "no owner".</li>
+					<li>Handling in habits no scoredUp or scoredDown data.</li>
                </ul>
             </li>				
 		</ul></dd>
