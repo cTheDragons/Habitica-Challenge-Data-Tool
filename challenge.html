@@ -170,7 +170,7 @@ sectionTables['taskChallenge'] = {
 	babyBear: {show: [1,2,4,7,13,14], orderBy: [[1, 'asc']]},
 	mamaBear: {show: [1,2,4,6,7,8,9,13,14,15,16,17], orderBy: [[1, 'asc']]},
 	papaBear: {show: ['all'], orderBy: [[1, 'asc']]},
-	extraColumnDefs: [{'className': 'dt-right', 'targets': [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]}],
+	extraColumnDefs: [{'className': 'dt-right', 'targets': [8,9,10,11,12,13,14,15,16,17,18,19]}],
 	subTitle: function (){
 		var html = ''
 		html += sectionCompletionStats()
@@ -1247,6 +1247,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	if (debugShowObject) console.log(rowData)
 	var urlToPost = ''	
 	var actionNotificationList = ''
+	var actionItem = ''
 	var index = 0
 	var privateMessage = ''
 	var loopList = []
@@ -1281,9 +1282,15 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 			}
 		}
 		
+		actionIndex = loopList[0].length
+		
 		for(var i = 0; i < loopList.length; i++)
 		{
-			actionNotificationList += '\n\u2022  ' + loopList[i][nameIndex]
+			actionItem = loopList[i][nameIndex]
+			if (actionItem.substring(0,3) == '<a '){
+				actionItem = actionItem.substring(actionItem.indexOf('>')+1,actionItem.length - ('</a>').length)
+			}
+			actionNotificationList += '\n\u2022  ' + actionItem
 		}
 		
 		if (privateMessage != null){
@@ -1306,8 +1313,8 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		
 		obj = loopList[index]
 		var newData = {message: privateMessage, toUserId: obj[uuidIndex]}
-		urlToPost = serverUrl + serverMessageUser //+ '/' + obj[uuidIndex] + '?message=' + privateMessage
-		$('#posting #statusPost').text('Messaging ' + obj[nameIndex] );
+		urlToPost = serverUrl + serverMessageUser 
+		$('#posting #statusPost').text('Messaging ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
 		if (debugShowObject) console.log(newData);
 		$.ajax({
@@ -1332,7 +1339,7 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 		if (debug) console.log('debug postMessageUserFailure start');
 		if (debugShowObject) console.log(data);
 		var errData = data;
-		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
+		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		index++
 		
 		postMessageUserCheckCompleted()
@@ -1341,9 +1348,9 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 
 	function postMessageUserSuccess(data){
 		if (debug) console.log('debug postMessageUserSucess start');
-		$('#posting #statusPost').text('Successfully Messaged ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Messaged ' + obj[actionIndex] );
 		if (debugShowObject) console.log(data);
-		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
+		actionNotificationList += '\n\u2022  ' + obj[actionIndex]  
 		index++
 		
 		postMessageUserCheckCompleted()
@@ -1370,6 +1377,8 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	if (debug) console.log('debug postGiftGem start');
 	var urlToPost = ''	
 	var actionNotificationList = ''
+	var actionItem = ''
+	var actionIndex = 0
 	var gemAmount = ''
 	var index = 0
 	var privateMessage = ''
@@ -1407,9 +1416,16 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 				}
 			}
 			
+			actionIndex = loopList[0].length
+			
 			for(var i = 0; i < loopList.length; i++)
 			{
-				actionNotificationList += '\n\u2022  ' + loopList[i][nameIndex]
+				actionItem = loopList[i][nameIndex]
+				if (actionItem.substring(0,3) == '<a '){
+					actionItem = actionItem.substring(actionItem.indexOf('>')+1,actionItem.length - ('</a>').length)
+				}
+				actionNotificationList += '\n\u2022  ' + actionItem
+				loopList[i].push(actionItem)
 			}
 		}
 		
@@ -1433,8 +1449,8 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		
 		obj = loopList[index]
 		var newData = {message: privateMessage, toUserId: obj[uuidIndex], gemAmount: gemAmount}
-		urlToPost = serverUrl + serverGiftGem //+ '/' + obj[uuidIndex] + '?message=' + privateMessage
-		$('#posting #statusPost').text('Giving Gems to ' + obj[nameIndex] );
+		urlToPost = serverUrl + serverGiftGem 
+		$('#posting #statusPost').text('Giving Gems to ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
 		if (debugShowObject) console.log(newData);
 		$.ajax({
@@ -1459,7 +1475,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		if (debug) console.log('debug postGiftGemFailure start');
 		if (debugShowObject) console.log(data);
 		var errData = data;
-		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
+		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		index++
 		
 		postGiftGemCheckCompleted()
@@ -1468,9 +1484,9 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 
 	function postGiftGemSuccess(data){
 		if (debug) console.log('debug postGiftGemSucess start');
-		$('#posting #statusPost').text('Successfully Gifted Gems to ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Gifted Gems to ' + obj[actionIndex] );
 		if (debugShowObject) console.log(data);
-		actionNotificationList += '\n\u2022  ' + obj[nameIndex]  
+		actionNotificationList += '\n\u2022  ' + obj[actionIndex]  
 		index++
 		
 		postGiftGemCheckCompleted()
@@ -1498,6 +1514,8 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 	var urlToPost = ''	
 	var index = 0
 	var privateMessage = ''
+	var actionItem = ''
+	var actionIndex = 0
 	var loopList = []
 	
 	if (rowData.length == 0){
@@ -1511,14 +1529,16 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		return;
 	} else {
 		if (debugShowObject) console.log( rowData );
+		
+		actionIndex = rowData[0].length
+		actionItem = rowData[0][nameIndex]
+		if (actionItem.substring(0,3) == '<a '){
+			actionItem = actionItem.substring(actionItem.indexOf('>')+1,actionItem.length - ('</a>').length)
+		}
+		rowData[0].push(actionItem)		
 
-		if (confirm('Are you sure to award the challenge to ' + rowData[0][nameIndex] + '\nAND\nclose the challenge?\n\nThere is no undo!')){
+		if (confirm('Are you sure to award the challenge to ' + rowData[0][actionIndex] + '\nAND\nclose the challenge?\n\nThere is no undo!')){
 			obj = rowData[0]
-			//newData['_id'] = groupId
-			//newData['id'] = groupId
-			//newData['leader'] = {}
-			//newData.leader['id'] = obj[uuidIndex]
-			//newData.leader['_id'] = obj[uuidIndex]
 			loopList = rowData
 			postNextAwardChallenge()
 		} else {
@@ -1532,9 +1552,9 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		$('#posting .good').show();
 		
 		obj = loopList[index]
-		//var newData = {message: privateMessage, toUserId: obj[uuidIndex], gemAmount: gemAmount}
+
 		urlToPost = serverUrl + serverPathChallenge + '/' + challengeId + '/' + serverAwardChallenge + '/' + obj[uuidIndex]
-		$('#posting #statusPost').text('Awarding Challenge to ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Awarding Challenge to ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
 		$.ajax({
 			url: urlToPost,
@@ -1556,7 +1576,7 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 		if (debug) console.log('debug postAwardChallengeFailure start');
 		if (debugShowObject) console.log(data);
 		var errData = data;
-		alert('ERROR WITH  ' +  obj[nameIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
+		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
 		
 		fetchdata()
 		
@@ -1565,10 +1585,10 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 
 	function postAwardChallengeSuccess(data){
 		if (debug) console.log('debug postAwardChallengeSucess start');
-		$('#posting #statusPost').text('Successfully Awarded ' + obj[nameIndex] );
+		$('#posting #statusPost').text('Successfully Awarded ' + obj[actionIndex] );
 		if (debugShowObject) console.log(data);
 		$('#posting #statusPost').text('Challenge has closed.' );
-		alert('The user ' + obj[nameIndex] + ' has been awarded the challenge. \n\nThe challenge has now closed')
+		alert('The user ' + obj[actionIndex] + ' has been awarded the challenge. \n\nThe challenge has now closed')
 		
 	    window.location.reload(false); 
 		
