@@ -1816,7 +1816,7 @@ function parseData() {
 	}
 
 	function userDataInHeader() {
-		var displayName = user.profile.nameNotPretty;
+		var displayName = user.profile.username;
 		var displayUserGemAmount = ''
 		if ((userId == challenge.leader.id) || (userIsAdmin)) {
 			var userGemAmount = user.balance * 4 
@@ -2328,6 +2328,11 @@ function parseData() {
 			//User
 			user.profile.nameNotPretty = renderFormattedText(user.profile.name, {removeParaTags: true})
 			user.profile.namePretty = renderFormattedText(user.profile.name)
+			if (user.auth != undefined && user.auth.local != undefined && user.auth.local.username != undefined) {
+				user.profile.username = user.auth.local.username 
+			} else {
+				user.profile.username = noUsernamePrefix + user.profile.name
+			}
 			
 			//challenge
 			challenge.nameNotPretty = renderFormattedText(challenge.name, {removeParaTags: true})
@@ -3179,6 +3184,8 @@ function parseData() {
 				obj.userPretty = 'System'
 				obj.userNotPretty = 'System'
 				obj.username = 'System'
+				obj.usernameNotPretty = 'System'
+				obj.usernamePretty = 'System'
 				obj.userStylesPretty = ''
 			} else {
 				obj.userPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + renderFormattedText(obj.user) + '</a>';
@@ -3189,6 +3196,7 @@ function parseData() {
 				} else {
 					obj.usernameNotPretty = '<a href="' + serverHabiticaProfile + obj.uuid + '" target="_blank">' + obj.username + '</a>';
 				}
+				obj.usernamePretty = obj.usernameNotPretty
 				
 				if (obj.userStyles != undefined) {
 					obj.userStylesPretty = JSON.stringify(obj.userStyles, null, ' ').replace(/: \{\n\s+/g, ': {').replace(/",\n\s+/g, ', ').replace(/"\n\s+\}/g, '}').replace(/(\r\n|\n|\r)/g,"<br />").replace(/"  "/g, '&nbsp;&nbsp');;
@@ -4348,7 +4356,8 @@ table#perMemberStats_participantDetails {
                 <ul>
 					<li>Adding usernames (with alt if username not defined).</li>
 					<li>Able to put carriage returns into message (Clunky but will do for now).</li>
-					<li>Adding more detail about the Leader in title</li>
+					<li>Adding more detail about the Leader in text sections</li>
+					<li>Made usernames and display names linked to Habitica Profile Page.</li>
 				</ul> 
             </li>
 			<li>Documentation:
