@@ -41,6 +41,7 @@ Contributors:
 	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
 	<script src="js/habitica-avatar.js"></script>  <!--- Avatar Generation https://github.com/crookedneighbor/habitica-avatar -->
 	<script src="js/lodash.js"></script> <!--lodash / copy objects -->
+	<script src="js/api-limit.js""></script> <!-- Personal Script used to handle Ajax calls with limiting-->
 	
 
 	 <!--- https://datatables.net/download/ -->
@@ -75,6 +76,7 @@ var newFetch; //holds if first fetch (therefore tables to be built and random me
 ////   Global Constants                              /////////////////
 //////////////////////////////////////////////////////////////////////
 var DOUBLEQUOTES = 		'"' //This is to make my life easier... 
+var SINGLEQUOTE = 		"'" //This is to make my life easier... 
 var SECTIONREFRESH = 	"SectionRefresh"
 var TABLEDISPLAYSUFFIX = '_display'
 
@@ -114,9 +116,9 @@ var sectionsToDisplay = [
 		{type: 'sectionTable', id: 'taskChallenge', title: 'Tasks Overall', showOnly: [], description: 'A table listing the summary  completion statics for each task of the challenge. Great for comparing Guild Versus Guild.'},
 		{type: 'sectionTable', id: 'membersChallenge', title: 'Participant Overall', showOnly: [], description: 'A table listing the summary  completion statics for each participant of the challenge.'},
 		{type: 'sectionTable', id: 'membersTask', title: 'Participant per Task', showOnly: [], description: 'A table listing the summary completion statics for each participant for each task of the challenge.'},
-		{type: 'sectionTable', id: 'membersTaskHistory', title: 'All Task History', showOnly: [], description: 'A table listing the each time a task was completed for all tasks for all participants.'},
+		{type: 'sectionTable', id: 'membersTaskHistory', title: 'All Task History', showOnly: [], description: 'A table listing each time a task was completed for all tasks for all participants.'},
 	{type: 'heading', id: 'headingGroup2', title: 'Communication', showOnly: [], description: ''},
-		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Displays the chat in which the challenge was posted, or the guild where chat messages should show, ie for Tavern, the chat from Tavern Challenge OverFlow Shows'},
+		{type: 'sectionTable', id: 'chatExport', title: 'Chat Export', showOnly: [], description: 'Displays the chat in which the challenge was posted, or the guild where chat messages should show. For example, for the Tavern, the chat from the Tavern Challenge OverFlow would show.'},
 		{type: 'sectionTable', id: 'chatNotSystemExport', title: 'Chat Export without System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
 		{type: 'sectionTable', id: 'chatSystemExport', title: 'Chat Export only System Msg', showOnly: ['party'], description: 'Will only show if party is selected. Displays the chat in which the challenge was posted, or the guild where chat messages should show.'},
 		{type: 'sectionTable', id: 'chatLikes', title: 'Chat Likes', showOnly: [], description: 'Shows who has liked which chat message.'},
@@ -454,6 +456,8 @@ var hideAvatar					= false;
 var exportOption 			 	= 'babyBear'; 
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
+
+var rlCurrent					= {};
 var ajaxTryAgainMax				= 3;
 var debug						= false;
 var debugShowObject				= false;
@@ -767,22 +771,15 @@ function fetchChallengeForUser() {
 	challengeForUser = []; // clear from previous fetches
 
     var ajaxRunningCount = 1; // drops to 0 when all calls have succeeded
-	$('#loading #statusFetch').text('Getting Challenges for User');
-    $.ajax({
-        url: serverUrl + serverPathChallengeForUser,
-        type: 'GET',
-        dataType: 'json',
-        cache: false,
-        beforeSend: function(xhr){
-                xhr.setRequestHeader('x-api-user', userId);
-                xhr.setRequestHeader('x-api-key',  apiToken);
-            },
-        success: fetchChallengeForUserSuccess,
-        error: fetchFailure
-    });
 	
-	function fetchFailure(data) {
+	var call = []
+	call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallengeForUser, newData: '', fnSuccess: fetchChallengeForUserSuccess, fnFailure: fetchFailure, statusText: 'Getting Challenges for User'})
+	makeAjaxCall(call, userId, apiToken, rlCurrent)
+
+	
+	function fetchFailure(data, rl) {
         if (debug) console.log('debug fetchFailure start');
+		rlCurrent = rl
         $('#loading .good').hide();
         $('#loading .bad' ).show();
         $('#documentationAndForm').show(); // in case user has done a re-fetch
@@ -791,8 +788,9 @@ function fetchChallengeForUser() {
         if (debug) console.log('debug fetchChallengeForUserSuccess not found');
     }
 	
-	function fetchChallengeForUserSuccess(data) {
+	function fetchChallengeForUserSuccess(data, rl) {
         if (debug) console.log('debug parseData Challenge For User Success Start success start');
+		rlCurrent = rl
 		 $('#loading .good').hide();
         challengeForUser = data.data;
 		
@@ -833,77 +831,32 @@ function fetchData() {
 	var ajaxTryAgain = 0;
 	var ajaxTryAgainNeed = 0;
 	
+	var call = []
+	
     // fetch the user's own content (guilds, parties):
-	$('#loading #statusFetch').text('Asking for User Data');
-    $.ajax({
-        url: serverUrl + serverPathUser,
-        type: 'GET',
-        dataType: 'json',
-        cache: false,
-        beforeSend: function(xhr){
-                xhr.setRequestHeader('x-api-user', userId);
-                xhr.setRequestHeader('x-api-key',  apiToken);
-            },
-        success: fetchUserSuccess,
-        error: fetchFailure
-    });
-
-    // fetch the site-wide content (gear names and stats, etc):
-	$('#loading #statusFetch').text('Asking for Generic Content');
-    $.ajax({
-        url: serverUrl + serverPathContent,
-        type: 'GET',
-        dataType: 'json',
-        cache: true,
-        success: fetchContentSuccess,
-        error: fetchFailure
-    });
-	
-    // fetch the site-wide content (gear names and stats, etc):
-	$('#loading #statusFetch').text('Asking for Challenge Content');
-    $.ajax({
-		url: serverUrl + serverPathChallenge + '/' + challengeId,
-		type: 'GET',
-		dataType: 'json',
-		cache: false,
-		beforeSend: function(xhr){
-				xhr.setRequestHeader('x-api-user', userId);
-				xhr.setRequestHeader('x-api-key',  apiToken);
-		},
-		success: fetchChallengeSuccess,
-		error: fetchFailure  //$$$ Fetch all guild data instead?
-    });
+	call.push({requestType: 'GET', urlTo: serverUrl + serverPathUser, newData: '', fnSuccess: fetchUserSuccess, fnFailure: fetchFailure, statusText: 'Asking for User Data'})
+	call.push({requestType: 'GET', urlTo: serverUrl + serverPathContent, newData: '', fnSuccess: fetchContentSuccess, fnFailure: fetchFailure, statusText: 'Asking for Generic Content'})
+	call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId, newData: '', fnSuccess: fetchChallengeSuccess, fnFailure: fetchFailure, statusText: 'Asking for Challenge Content'})
+	call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallengeTasks + '/' + challengeId, newData: '', fnSuccess: fetchChallengeTasksSuccess, fnFailure: fetchFailure, statusText: 'Asking for Challenge Content'})
+	makeAjaxCall(call, userId, apiToken, rlCurrent)
 	
 	
-	 // fetch the site-wide content (gear names and stats, etc):
-	$('#loading #statusFetch').text('Asking for Challenge Content');
-    $.ajax({
-		url: serverUrl + serverPathChallengeTasks + '/' + challengeId,
-		type: 'GET',
-		dataType: 'json',
-		cache: false,
-		beforeSend: function(xhr){
-				xhr.setRequestHeader('x-api-user', userId);
-				xhr.setRequestHeader('x-api-key',  apiToken);
-		},
-		success: fetchChallengeTasksSuccess,
-		error: fetchFailure  //$$$ Fetch all guild data instead?
-    });
 	
-	
-	function fetchFailure(ChallengeNotFound) {
+	function fetchFailure(data, rl) {
         if (debug) console.log('debug fetchFailure start');
+		rlCurrent = rl
         $('#loading .good').hide();
         $('#loading .bad' ).show();
         $('#documentationAndForm').show(); // in case user has done a re-fetch
         $('#documentationAndFormClose').hide();
-		console.log(ChallengeNotFound)
+		$('#loading #statusError').text('Error : ' + data.responseJSON.error + '  -  ' + data.responseJSON.message ); 
+		console.log(data)
         if (debug) console.log('debug fetchFailure end');
     }
 	
-	function fetchUserSuccess(data) {
+	function fetchUserSuccess(data, rl) {
         if (debug) console.log('debug parseData User success start');
-		$('#loading #statusFetch').text('Fetching User Data');
+		rlCurrent = rl
         user = data.data;
 		
 		if (debugShowObject) console.log(user);
@@ -919,9 +872,9 @@ function fetchData() {
             fetchMemberList();
         }
     }
-	function fetchContentSuccess(data) {
+	function fetchContentSuccess(data, rl) {
         if (debug) console.log('debug parseData Content success start');
-		$('#loading #statusFetch').text('Fetching Generic Content');
+		rlCurrent = rl
         content = data.data;
 		if (debugShowObject) console.log(content);
         ajaxRunningCount--;
@@ -931,8 +884,9 @@ function fetchData() {
     }
   
   
-	function fetchChallengeSuccess(data) {
+	function fetchChallengeSuccess(data, rl) {
 		if (debug) console.log('debug Challenge Sucess data start');
+		rlCurrent = rl
 		challenge = data.data;
 		if (debugShowObject) console.log(challenge);
 		
@@ -959,8 +913,9 @@ function fetchData() {
 	}		
 	
 	
-	function fetchChallengeTasksSuccess(data) {
+	function fetchChallengeTasksSuccess(data, rl) {
 		if (debug) console.log('debug Challenge Task Sucess data start');
+		rlCurrent = rl
 		challengeTasks = data.data;
 		if (debugShowObject) console.log(challengeTasks);
 		
@@ -975,22 +930,15 @@ function fetchData() {
 	function fetchGuildData() {
 		if (debug) console.log('debug parseData Guild Data start');
 		
-		$.ajax({
-			url: serverUrl + serverPathGroup + '/' + groupId,
-			type: 'GET',
-			dataType: 'json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-			},
-			success: fetchGuildSuccess,
-			error: fetchFailure  //$$$ Fetch all guild data instead?
-		});
+		call = [] //clear list
+		call.push({requestType: 'GET', urlTo: serverUrl + serverPathGroup + '/' + groupId, newData: '', fnSuccess: fetchGuildSuccess, fnFailure: fetchFailure, statusText: 'Asking for Guild Data'})
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
+
 	}
 		
-	function fetchGuildSuccess(data) {
+	function fetchGuildSuccess(data, rl) {
 		if (debug) console.log('debug Guild Sucess data start');
+		rlCurrent = rl
 		group = data.data;
 		if (debugShowObject) console.log(group);
 		
@@ -1004,22 +952,15 @@ function fetchData() {
 	function fetchPartyData() {
 		if (debug) console.log('debug parseData Party Data start');
 		
-		$.ajax({
-			url: serverUrl + serverPathParty,
-			type: 'GET',
-			dataType: 'json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-			},
-			success: fetchPartySuccess,
-			error: fetchFailure //$$$ Fetch all guild data instead?
-		});
+		call = [] //clear list
+		call.push({requestType: 'GET', urlTo: serverUrl + serverPathParty, newData: '', fnSuccess: fetchPartySuccess, fnFailure: fetchFailure, statusText: 'Asking for Party Data'})
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
+	
 	}	
 	
-	function fetchPartySuccess(data) {
+	function fetchPartySuccess(data, rl) {
 		if (debug) console.log('debug Party Sucess data start');
+		rlCurrent = rl
 		party = data.data;
 		group = party;
 		if (debugShowObject) console.log(party);
@@ -1029,16 +970,10 @@ function fetchData() {
 			fetchMemberList();
 		}
 	}	
-	
-	
-	
-	
-	
 		
 	
 	function fetchMemberList() {
 		if (debug) console.log('debug Member List start');
-		$('#loading #statusFetch').text('Asking for Member List (' + memberListToFetch.length + ' so far)');
 		var completeUrl = '';
 		
 		if (lastListMemberId == '') {
@@ -1049,24 +984,17 @@ function fetchData() {
 		
 
 		if (debugShowObject) console.log(completeUrl);	
-		$.ajax({
-			url: completeUrl,
-			type: 'GET',
-			dataType: 'json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-			},
-			success: fetchMemberListSuccess,
-			error: fetchMemberListFailure
-		});
+		call = []
+		call.push({requestType: 'GET', urlTo: completeUrl, newData: '', fnSuccess: fetchMemberListSuccess, fnFailure: fetchMemberListFailure, statusText: 'Asking for Member List (' + memberListToFetch.length + ' so far)'})
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
+	
 	}
 
 		
 		
-	function fetchMemberListSuccess(data) {
+	function fetchMemberListSuccess(data, rl) {
 		if (debug) console.log('debug Member List Sucess start');
+		rlCurrent = rl
 		memberListToFetch = memberListToFetch.concat(data.data);
 		
 		if (memberListToFetch.length > 0) {
@@ -1087,13 +1015,14 @@ function fetchData() {
 		}
 	}	
 		
-	function fetchMemberListFailure() {
+	function fetchMemberListFailure(data, rl) {
 		if (debug) console.log('debug Member List Fail Start');
+		rlCurrent = rl
 		ajaxTryAgain++
 		if (ajaxTryAgain < ajaxTryAgainMax) {
 			fetchMemberList()
 		} else {
-			fetchFailure()
+			fetchFailure(data, rl)
 		}
 	}
 	
@@ -1137,52 +1066,30 @@ function fetchData() {
 		lastMemberIndex = 0
 		lastMemberChallengeIndex = 0
 		
+		call = [] //clear list
 		$.each(listToFetch, function(index, obj){
-			$('#loading #statusFetch').text('Asking for Member Data ... (This can take a while)') ;
 			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + obj.id + ')');
-			$.ajax({
-				url: serverUrl + serverPathMemberProfilePart + '/' + obj.id,
-				type: 'GET',
-				dataType: 'json',
-				cache: false,
-				beforeSend: function(xhr){
-						xhr.setRequestHeader('x-api-user', userId);
-						xhr.setRequestHeader('x-api-key',  apiToken);
-				},
-				success: fetchMemberSuccess,
-				error: fetchMemberFail
-			});
-			
-			$.ajax({
-				url: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id,
-				type: 'GET',
-				dataType: 'json',
-				cache: false,
-				beforeSend: function(xhr){
-						xhr.setRequestHeader('x-api-user', userId);
-						xhr.setRequestHeader('x-api-key',  apiToken);
-				},
-				success: fetchMemberChallengeSuccess,
-				error: fetchMemberChallengeFail
-			});
+			call.push({requestType: 'GET', urlTo: serverUrl + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberSuccess, fnFailure: fetchMemberFail, statusText: 'Asking for Member Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
+			call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
 		});
+		makeAjaxCall(call, userId, apiToken, rlCurrent)		
 	}
 		
 		
-	function fetchMemberFail() {
-	
+	function fetchMemberFail(data, rl) {
 		if (debug) console.log('debug Member Fail Fetch for ' + (lastMemberIndex+1))
-		// $$$ Put up error message?????			
+		rlCurrent = rl
+		$('#loading #statusError').text('Error : ' + data.responseJSON.error + '  -  ' + data.responseJSON.message ); 
 		lastMemberIndex++
 		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
 		checkMemberAllFetch()
 	}
 			
 			
-	function fetchMemberSuccess(data) {
+	function fetchMemberSuccess(data, rl) {
 		if (debug) console.log('debug Member Sucess data start ' +  lastMemberIndex + '  id: ' + data.data._id);
+		rlCurrent = rl
 		var friendlyMemberIndex = lastMemberIndex + 1
-		$('#loading #statusFetch').text('Fetching Member '  +  friendlyMemberIndex);
 		
 		members[data.data._id] = data.data;
 
@@ -1190,9 +1097,10 @@ function fetchData() {
 		checkMemberAllFetch()
 	}	
 	
-	function fetchMemberChallengeFail() {
+	function fetchMemberChallengeFail(data, rl) {
 		if (debug) console.log('debug Member Challenge Fail Fetch for ' + (lastMemberIndex+1))
-		// $$$ Put up error message?????			
+		rlCurrent = rl
+		$('#loading #statusError').text('Error : ' + data.responseJSON.error + '  -  ' + data.responseJSON.message ); 			
 		
 		lastMemberChallengeIndex++
 		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
@@ -1200,10 +1108,10 @@ function fetchData() {
 	}
 			
 			
-	function fetchMemberChallengeSuccess(data) {
+	function fetchMemberChallengeSuccess(data, rl) {
 		if (debug) console.log('debug Member Challenge Sucess data start ' +  lastMemberIndex + '  id: ' + data.data._id);
+		rlCurrent = rl
 		var friendlyMemberIndex = lastMemberIndex + 1
-		//$('#loading #statusFetch').text("Fetching Member's Challenge Data "  +  friendlyMemberIndex);  //Not used as it flickers too much
 		membersChallenge[data.data.id] = data.data;
 		
 		lastMemberChallengeIndex++
@@ -1216,7 +1124,6 @@ function fetchData() {
 			if (ajaxTryAgainNeed > 0) {
 				fetchMembers()
 			} else {	
-				$('#loading #statusFetch').text('Preparing to Display the Data');
 				if (debugShowObject) console.log(members);
 				if (debugShowObject) console.log(membersChallenge);
 				parseData();
@@ -1309,34 +1216,23 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	
 	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextMessageUser(){
-		$('#posting .good').show();
 		
 		obj = loopList[index]
 		var newData = {message: privateMessage, toUserId: obj[uuidIndex]}
 		urlToPost = serverUrl + serverMessageUser 
-		$('#posting #statusPost').text('Messaging ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
 		if (debugShowObject) console.log(newData);
-		$.ajax({
-			url: urlToPost,
-			type: 'POST',
-			contentType: 'application/json',
-			data: JSON.stringify(newData),
-			dataType: 'json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-				},
-			success: postMessageUserSuccess,
-			error: postMessageUserFailure
-		});		
+
+		var call = []
+		call.push({requestType: 'POST', urlTo: urlToPost, newData: JSON.stringify(newData), fnSuccess: postMessageUserSuccess, fnFailure: postMessageUserFailure, statusText: 'Messaging ' + obj[actionIndex] })
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
 	}
 		
 
 	
-	function postMessageUserFailure(data){
+	function postMessageUserFailure(data, rl){
 		if (debug) console.log('debug postMessageUserFailure start');
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
 		var errData = data;
 		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
@@ -1346,9 +1242,9 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	}
 
 
-	function postMessageUserSuccess(data){
+	function postMessageUserSuccess(data, rl){
 		if (debug) console.log('debug postMessageUserSucess start');
-		$('#posting #statusPost').text('Successfully Messaged ' + obj[actionIndex] );
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
 		actionNotificationList += '\n\u2022  ' + obj[actionIndex]  
 		index++
@@ -1358,7 +1254,6 @@ function postMessageUser(rowData, uuidIndex, nameIndex) {
 	
 	function postMessageUserCheckCompleted(){
 		if (index === loopList.length){
-			$('#posting .good').hide();
 			if (debugShowObject) console.log(actionNotificationList);
 			alert('The following users have been messaged:' + actionNotificationList + '\n\nYour data will now be refreshed')
 			fetchData() 
@@ -1445,34 +1340,24 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	
 	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextGiftGem(){
-		$('#posting .good').show();
 		
 		obj = loopList[index]
 		var newData = {message: privateMessage, toUserId: obj[uuidIndex], gemAmount: gemAmount}
 		urlToPost = serverUrl + serverGiftGem 
-		$('#posting #statusPost').text('Giving Gems to ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
 		if (debugShowObject) console.log(newData);
-		$.ajax({
-			url: urlToPost,
-			type: 'POST',
-			contentType: 'application/json',
-			data: JSON.stringify(newData),
-			dataType: 'json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-				},
-			success: postGiftGemSuccess,
-			error: postGiftGemFailure
-		});		
+		
+		var call = []
+		call.push({requestType: 'POST', urlTo: urlToPost, newData: JSON.stringify(newData), fnSuccess: postGiftGemSuccess, fnFailure: postGiftGemFailure, statusText: 'Giving Gems to ' + obj[actionIndex]})
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
+
 	}
 		
 
 	
-	function postGiftGemFailure(data){
+	function postGiftGemFailure(data, rl){
 		if (debug) console.log('debug postGiftGemFailure start');
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
 		var errData = data;
 		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
@@ -1482,9 +1367,9 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	}
 
 
-	function postGiftGemSuccess(data){
+	function postGiftGemSuccess(data, rl){
 		if (debug) console.log('debug postGiftGemSucess start');
-		$('#posting #statusPost').text('Successfully Gifted Gems to ' + obj[actionIndex] );
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
 		actionNotificationList += '\n\u2022  ' + obj[actionIndex]  
 		index++
@@ -1494,7 +1379,6 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 	
 	function postGiftGemCheckCompleted(){
 		if (index === loopList.length){
-			$('#posting .good').hide();
 			if (debugShowObject) console.log(actionNotificationList);
 			alert('The following users have been gifted ' + gemAmount + ' gem(s):' + actionNotificationList + '\nwith message:\n' + privateMessage + '\n\nYour data will now be refreshed')
 			fetchData() 
@@ -1549,31 +1433,22 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 	
 	//This is done like this as to avoid ERR_INCOMPLETE_CHUNKED_ENCODING
 	function postNextAwardChallenge(){
-		$('#posting .good').show();
 		
 		obj = loopList[index]
 
 		urlToPost = serverUrl + serverPathChallenge + '/' + challengeId + '/' + serverAwardChallenge + '/' + obj[uuidIndex]
-		$('#posting #statusPost').text('Awarding Challenge to ' + obj[actionIndex] );
 		if (debugShowObject) console.log(urlToPost);
-		$.ajax({
-			url: urlToPost,
-			type: 'POST',
-			contentType: 'application/json',
-			cache: false,
-			beforeSend: function(xhr){
-					xhr.setRequestHeader('x-api-user', userId);
-					xhr.setRequestHeader('x-api-key',  apiToken);
-				},
-			success: postAwardChallengeSuccess,
-			error: postAwardChallengeFailure
-		});		
+		
+		var call = []
+		call.push({requestType: 'POST', urlTo: urlToPost, newData: '', fnSuccess: postAwardChallengeSuccess, fnFailure: postAwardChallengeFailure, statusText: 'Awarding Challenge to ' + obj[actionIndex]  })
+		makeAjaxCall(call, userId, apiToken, rlCurrent)
 	}
 		
 
 	
-	function postAwardChallengeFailure(data){
+	function postAwardChallengeFailure(data, rl){
 		if (debug) console.log('debug postAwardChallengeFailure start');
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
 		var errData = data;
 		alert('ERROR WITH  ' +  obj[actionIndex] + '\n\n' + errData.responseJSON.error + '\n' + errData.responseJSON.message  + '\n\nPlease refetch your data and try again.');	
@@ -1583,11 +1458,10 @@ function postAwardChallenge(rowData, uuidIndex, nameIndex) {
 	}
 
 
-	function postAwardChallengeSuccess(data){
+	function postAwardChallengeSuccess(data, rl){
 		if (debug) console.log('debug postAwardChallengeSucess start');
-		$('#posting #statusPost').text('Successfully Awarded ' + obj[actionIndex] );
+		rlCurrent = rl
 		if (debugShowObject) console.log(data);
-		$('#posting #statusPost').text('Challenge has closed.' );
 		alert('The user ' + obj[actionIndex] + ' has been awarded the challenge. \n\nThe challenge has now closed')
 		
 	    window.location.reload(false); 
@@ -1622,9 +1496,7 @@ function parseData() {
 	//////////////////////////////////////////////////////////////////////
     ////   Display the HTML that the functions have created   ////////////
     //////////////////////////////////////////////////////////////////////
-    $('#loading #statusFetch').text('') //All Done
 	$('#loading .good').hide();
-	$('#posting .good').hide(); // just to be sure
     $('#documentationAndFormClose').show();
     $('#documentationAndForm').hide();
 	
@@ -3983,20 +3855,6 @@ body {
 }
 
 
-#posting {
-    margin-right: 30px;
-    margin-left: 30px;
-    color: orange;
-    font-size: 1.5em;
-    font-weight: bold;
-}
-#posting ul {
-    font-size: 0.8em;
-}
-#posting ul a {
-    color: orange;
-}
-
 .narrowContent {      /* The data should be as wide as the user's window   */
     max-width: 500px; /* but some explanatory paragraphs should be narrow. */
 }
@@ -4337,7 +4195,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v3.0)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.0)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4346,8 +4204,9 @@ table#perMemberStats_participantDetails {
 
 <div id="loading">
     <div class="good hide">
-        <p>Please wait. Fetching data from
-        <span id="serverName">Habitica</span>... <span id="statusFetch"></span></p>
+        <p>Please wait. <span id="statusCallType">Fetching</span> data from
+        <span id="serverName">Habitica</span>... <span id="statusMessage"></span></p>
+		<p><span id="statusWait"></span></p>
     </div>
     <div class="bad hide">
         <p>There was an error obtaining your data.</p>
@@ -4358,18 +4217,27 @@ table#perMemberStats_participantDetails {
             <li>If the page's URL starts with "http://" change it to start with "https://" (or just use <a href="https://oldgods.net/habitica/cTheDragons/challenge.html">this correct link</a>).</li>
             <li>If neither of those help, contact me! See <strong>"Help and Contact Details"</strong> at the bottom of this page.</li>
         </ul>
+		<span id="statusError"></span></p>
     </div>
 </div>
-<div id="posting">
-	<div class="good hide">
-		<p>Please wait. Posting data to
-		<span id="serverName">Habitica</span>... <span id="statusPost"></span></p>
-	</div>
-</div>
+
 
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>4.0 - Don't Limit the Drinks<span class="date">2020-07-22</span></dt>
+        <dd><ul>
+ 			<li>Features:
+                <ul>
+					<li>Handling the new Habitica API Limits. </li>
+				</ul> 
+            </li>
+			<li>Documentation:
+                <ul>
+					<li>Updated documentation due to API Limits.</li>
+                </ul>
+            </li>				
+		</ul></dd>
 		<dt>3.0 - Roses & Clunky Lines<span class="date">2019-05-01</span></dt>
         <dd><ul>
  			<li>Features:
@@ -4809,14 +4677,12 @@ table#perMemberStats_participantDetails {
             </label>
 			<div id="exportOptionSelector"></div>
             <input class="div-fetchData" type="submit" value="Fetch Challenge Data" />
+			<p>To ensure quick loads, only use one instance of Third Party Tool at a time.</p>
 			<p class="highlight">Challenge ID:</p>
 			<p>Enter either the Challenge ID, or the URL for the Challenge. The Challenge ID is a string of characters similar to your User ID, e.g. 2ff9822b-27f2-4774-98da-db349b57a38e. The Challenge ID appears at the end of the URL or on the left hand panel on the website. It is not the name of the challenge. You can always just post the entire URL, which is much easier!</p>
 			<div id="exportOptionDesc"></div>
             <p class="highlight">Privacy and security notes:</p>
             <ul>
-            <!--<li>If you access this page from the Data menu on the Habitica
-            website, your User ID will be automatically added to the form
-            above.</li> $$$ Maybe one day when the tool that good--->
             <li>Your API Token is a password - do not share it with anyone,
             not even the maintainer of this page if you are seeking help.</li>
             <li>When you enter your User ID and API Token here and click
