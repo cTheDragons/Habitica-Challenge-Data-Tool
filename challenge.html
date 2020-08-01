@@ -41,7 +41,7 @@ Contributors:
 	<script src="js/habitica-markdown.min.js"></script> <!--- Markdown -->
 	<script src="js/habitica-avatar.js"></script>  <!--- Avatar Generation https://github.com/crookedneighbor/habitica-avatar -->
 	<script src="js/lodash.js"></script> <!--lodash / copy objects -->
-	<script src="js/api-limit.js""></script> <!-- Personal Script used to handle Ajax calls with limiting-->
+	<script src="js/api-limit.js"></script> <!-- Personal Script used to handle Ajax calls with limiting-->
 	
 
 	 <!--- https://datatables.net/download/ -->
@@ -433,7 +433,7 @@ var serverPathChallengeTasks	= '/tasks/challenge'
 
 var serverPathGroup				= '/groups' //Guild associated with Challenge
 var serverPathParty				= '/groups/party'
-var serverPathGroupMemberPart	= '/members' //will be /groups/:groupId/members //challenge members
+var serverPathGroupMemberPart	= '/members?limit=60&includeAllPublicFields=true' //will be /groups/:groupId/members //challenge members
 var serverPathMemberProfilePart	= '/members' //will be /members/:uid //
 var serverMessageUser			= '/members/send-private-message'
 var serverGiftGem				= '/members/transfer-gems'
@@ -823,6 +823,7 @@ function fetchData() {
 	membersChallenge = []; // clear from previous fetches
 	
 	var listToFetch = [];
+	var listToFetch_Challenge = [];
 	var lastMemberIndex = 0 // clear from previous fetches
 	var lastMemberChallengeIndex = 0 // clear from previous fetches
 	
@@ -979,7 +980,7 @@ function fetchData() {
 		if (lastListMemberId == '') {
 			completeUrl = serverUrl + serverPathChallenge + '/' + challengeId + serverPathGroupMemberPart ;
 		} else {
-			completeUrl = serverUrl + serverPathChallenge + '/' + challengeId + serverPathGroupMemberPart + '?lastId=' + lastListMemberId;
+			completeUrl = serverUrl + serverPathChallenge + '/' + challengeId + serverPathGroupMemberPart + '&lastId=' + lastListMemberId;
 		}
 		
 
@@ -996,6 +997,12 @@ function fetchData() {
 		if (debug) console.log('debug Member List Sucess start');
 		rlCurrent = rl
 		memberListToFetch = memberListToFetch.concat(data.data);
+		
+		//Add each members 
+		$.each(memberListToFetch, function(index, obj){
+			members[obj.id] = obj
+		});
+		
 		
 		if (memberListToFetch.length > 0) {
 			if (memberListToFetch[memberListToFetch.length -1]._id == lastListMemberId || memberListToFetch.length == challenge.memberCount) {
@@ -1027,40 +1034,29 @@ function fetchData() {
 	}
 	
 	function fetchMembers(){
-
-		
-		if (ajaxTryAgainNeed > 0)  { 
-			if (debug) console.log('debug MEMBER DATA - Looks like we missed some stray ducks (' + ajaxTryAgainNeed + ')');
 	
-			//need to find the missing members
-			var ajaxTryAgainList = []
+		if (debug) console.log('debug MEMBER DATA - Checking if we missing some stray ducks (' + ajaxTryAgainNeed + ')');
+	
+		//need to find the missing members
+		var ajaxTryAgainList = []
+		var ajaxTryAgainList_Challenge = []
+		
+		$.each(memberListToFetch, function(index, obj){
+			if (members[obj.id] == undefined) {
+				ajaxTryAgainList.push(obj)
+			} 
+			if (membersChallenge[obj.id] == undefined) {
+				ajaxTryAgainList_Challenge.push(obj)
+			}		
+		});
+		
+		ajaxTryAgainNeed = 0 
+		
+		ajaxTryAgain++ 
+		
+		listToFetch = ajaxTryAgainList
+		listToFetch_Challenge = ajaxTryAgainList_Challenge
 			
-			$.each(memberListToFetch, function(index, obj){
-				if (members[obj.id] == undefined) {
-					ajaxTryAgainList.push(obj)
-				} else if (membersChallenge[obj.id] == undefined) {
-					ajaxTryAgainList.push(obj)
-				}		
-			});
-			
-			ajaxTryAgainNeed = 0 
-			
-			ajaxTryAgain++ 
-			
-			listToFetch = ajaxTryAgainList
-			
-		} else {
-			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + lastMemberIndex + ')');
-			if (debugShowObject) console.log(memberListToFetch[lastMemberIndex].id);
-
-			//Do a quick loop so we can check if leader is needed $$$I'm sure there is a better way but it is late
-			memberListToFetch_idOnly = []
-			$.each(memberListToFetch, function(index, obj){
-				memberListToFetch_idOnly.push(obj.id)
-			});
-			
-			listToFetch = memberListToFetch
-		}
 		
 		if (debugShowObject) console.log(listToFetch.length)
 		lastMemberIndex = 0
@@ -1068,9 +1064,12 @@ function fetchData() {
 		
 		call = [] //clear list
 		$.each(listToFetch, function(index, obj){
-			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks (' + obj.id + ')');
+			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Member ' + obj.id + ')');
 			call.push({requestType: 'GET', urlTo: serverUrl + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberSuccess, fnFailure: fetchMemberFail, statusText: 'Asking for Member Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
-			call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
+		});
+		$.each(listToFetch_Challenge, function(index, obj){
+			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Challenge ' + obj.id + ')');
+			call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch_Challenge.length + ')'})
 		});
 		makeAjaxCall(call, userId, apiToken, rlCurrent)		
 	}
@@ -4195,7 +4194,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.0)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.1)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4225,6 +4224,19 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>4.1 - Warp Speed<span class="date">2020-08-01</span></dt>
+        <dd><ul>
+	        <li>Features:
+                <ul>
+					<li>Fetch member's details while asking for list - thus cutting down requests.</li>
+				</ul>
+			</li>
+			<li>Documentation:
+                <ul>
+					<li>Fixing the years in the documention. - Seems I'm already thinking I'm in 2021</li>
+                </ul>
+            </li>	
+		</ul></dd>
 		<dt>4.0 - Don't Limit the Drinks<span class="date">2020-07-22</span></dt>
         <dd><ul>
  			<li>Features:
