@@ -1062,15 +1062,20 @@ function fetchData() {
 		lastMemberIndex = 0
 		lastMemberChallengeIndex = 0
 		
-		call = [] //clear list
-		$.each(listToFetch, function(index, obj){
-			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Member ' + obj.id + ')');
-			call.push({requestType: 'GET', urlTo: serverUrl + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberSuccess, fnFailure: fetchMemberFail, statusText: 'Asking for Member Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
-		});
-		$.each(listToFetch_Challenge, function(index, obj){
-			if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Challenge ' + obj.id + ')');
-			call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch_Challenge.length + ')'})
-		});
+		if ((listToFetch.length == 0) && (listToFetch_Challenge.length == 0)) {
+			if (debug) console.log('debug MEMBER DATA - Wooho! Done all my homework!');			
+			fetchMemberComplete()
+		} else {
+			call = [] //clear list
+			$.each(listToFetch, function(index, obj){
+				if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Member ' + obj.id + ')');
+				call.push({requestType: 'GET', urlTo: serverUrl + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberSuccess, fnFailure: fetchMemberFail, statusText: 'Asking for Member Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch.length + ')'})
+			});
+			$.each(listToFetch_Challenge, function(index, obj){
+				if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Challenge ' + obj.id + ')');
+				call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch_Challenge.length + ')'})
+			});
+		}
 		makeAjaxCall(call, userId, apiToken, rlCurrent)		
 	}
 		
@@ -1081,7 +1086,7 @@ function fetchData() {
 		$('#loading #statusError').text('Error : ' + data.responseJSON.error + '  -  ' + data.responseJSON.message ); 
 		lastMemberIndex++
 		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
-		checkMemberAllFetch()
+		fetchMemberComplete()
 	}
 			
 			
@@ -1093,7 +1098,7 @@ function fetchData() {
 		members[data.data._id] = data.data;
 
 		lastMemberIndex++
-		checkMemberAllFetch()
+		fetchMemberComplete()
 	}	
 	
 	function fetchMemberChallengeFail(data, rl) {
@@ -1103,22 +1108,22 @@ function fetchData() {
 		
 		lastMemberChallengeIndex++
 		if (ajaxTryAgain != ajaxTryAgainMax) ajaxTryAgainNeed++
-		checkMemberAllFetch()
+		fetchMemberComplete()
 	}
 			
 			
 	function fetchMemberChallengeSuccess(data, rl) {
-		if (debug) console.log('debug Member Challenge Sucess data start ' +  lastMemberIndex + '  id: ' + data.data._id);
+		if (debug) console.log('debug Member Challenge Sucess data start ' +  lastMemberIndex_Challenge + '  id: ' + data.data._id);
 		rlCurrent = rl
 		var friendlyMemberIndex = lastMemberIndex + 1
 		membersChallenge[data.data.id] = data.data;
 		
 		lastMemberChallengeIndex++
-		checkMemberAllFetch()
+		fetchMemberComplete()
 	}
 	
-	function checkMemberAllFetch() {
-		if ((lastMemberIndex == listToFetch.length) && (lastMemberChallengeIndex == listToFetch.length)) { // all ajax calls have finished
+	function fetchMemberComplete() {
+		if (((lastMemberIndex == listToFetch.length) || (listToFetch.length == 0)) && ((lastMemberChallengeIndex == listToFetch_Challenge.length) || (listToFetch_Challenge.length == 0))) { // all ajax calls have finished
 			if (debug) console.log('debug Lost ducks ' + (ajaxTryAgainNeed))
 			if (ajaxTryAgainNeed > 0) {
 				fetchMembers()
@@ -2625,262 +2630,264 @@ function parseData() {
 				
 			
 				//Calculate task information.
-				$.each(membersChallenge[obj.id].tasks, function(index2, obj2){
-					var challengeTaskIndex = challengeTasksRef[obj2.challenge.taskId]
-					modifyTaskProperties(obj2)
+				if (membersChallenge[obj.id].tasks != undefined) {
+					$.each(membersChallenge[obj.id].tasks, function(index2, obj2){
+						var challengeTaskIndex = challengeTasksRef[obj2.challenge.taskId]
+						modifyTaskProperties(obj2)
 
 
 
-					obj2.checklistComp = {}
-					obj2.checklistComp.fullList = ''
-					obj2.checklistComp.fullListPretty = ''
-					obj2.checklistComp.fullListNotPretty = ''
-					var checkSymbol  = ''
-					$.each(obj2.checklist, function(index3, obj3){
-						if (obj3.completed) { 
-							checkSymbol = '&#9745'
-						} else {
-							checkSymbol = '&#9744'
+						obj2.checklistComp = {}
+						obj2.checklistComp.fullList = ''
+						obj2.checklistComp.fullListPretty = ''
+						obj2.checklistComp.fullListNotPretty = ''
+						var checkSymbol  = ''
+						$.each(obj2.checklist, function(index3, obj3){
+							if (obj3.completed) { 
+								checkSymbol = '&#9745'
+							} else {
+								checkSymbol = '&#9744'
+							}
+							if (obj2.checklistComp.fullList != '') checkSymbol = '<br />' + checkSymbol
+							obj2.checklistComp.fullList += checkSymbol + '&nbsp;&nbsp;' + obj3.text
+							obj2.checklistComp.fullListPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text)
+							obj2.checklistComp.fullListNotPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text, {removeParaTags: true})
+						});
+						
+						obj2.challengeStats = {}
+						
+						obj2.challengeStats.streak = {}
+						obj2.challengeStats.streak.current = 0
+						obj2.challengeStats.streak.min = undefined
+						obj2.challengeStats.streak.max = undefined
+						obj2.challengeStats.streakNeg = {}
+						obj2.challengeStats.streakNeg.current = 0
+						obj2.challengeStats.streakNeg.min = undefined
+						obj2.challengeStats.streakNeg.max = undefined
+						obj2.challengeStats.first = reformatDate(neverDate)
+						obj2.challengeStats.last = reformatDate(neverDate)
+						obj2.challengeStats.count = 0
+						obj2.challengeStats.countPositive = 0
+						obj2.challengeStats.countNegative = 0
+						obj2.challengeStats.countNotDue = 0
+						
+						obj2.challengeStats.timeDiffMin = undefined
+						obj2.challengeStats.timeDiffMax = undefined
+						obj2.challengeStats.valueDiffMin = undefined
+						obj2.challengeStats.valueDiffMax = undefined
+
+					
+						
+						if ((members[obj.id].challengeStats.joined.utcTime > obj2.creation.utcTime) || (members[obj.id].challengeStats.joined.utcTime == myDateConverter(neverDate, 'utcTime'))) members[obj.id].challengeStats.joined = obj2.creation
+						
+						
+						if (obj2.history == undefined) {
+							obj2.history = []
 						}
-						if (obj2.checklistComp.fullList != '') checkSymbol = '<br />' + checkSymbol
-						obj2.checklistComp.fullList += checkSymbol + '&nbsp;&nbsp;' + obj3.text
-						obj2.checklistComp.fullListPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text)
-						obj2.checklistComp.fullListNotPretty += checkSymbol + '&nbsp;&nbsp;' + renderFormattedText(obj3.text, {removeParaTags: true})
+						
+						if (obj2.completed) {
+							if (obj2.dateCompleted != undefined) {
+								var tempDate = myDateConverter(obj2.dateCompleted, 'epoch')
+							} else {
+								var tempDate = myDateConverter(obj2.updatedAt, 'epoch')
+								//daily $$$ADd another variable here?
+							}
+						
+							addToArray = {};
+							addToArray = {date: tempDate, value: obj2.value}
+							if (obj2.history.length == 0) obj2.history.push(addToArray)						
+						}
+					
+
+						var tempValuePrev = 0
+						var tempDatePrev = obj2.creation
+						var firstRun = true
+						
+						$.each(obj2.history, function(index3, obj3){
+							modifyTaskHistoryProperties(obj3)
+							
+							if (obj2.type == 'habit') {
+								if (obj3.scoredUp == undefined) obj3.scoredUp = 0 //Maybe we should check values if up or down but the is old data.
+								if (obj3.scoredDown == undefined) obj3.scoredDown = 0 //Maybe we should check values if up or down but the is old data.
+							
+								obj3.clickup = obj3.scoredUp
+								obj3.clickdown = obj3.scoredDown
+								obj3.total = obj3.scoredUp + obj3.scoredDown
+
+								obj2.challengeStats.countPositive += obj3.clickup
+								members[obj.id].challengeStats.countPositive += obj3.clickup
+								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += obj3.clickup
+								challenge.challengeStats.countPositive += obj3.clickup
+								
+								obj2.challengeStats.countNegative += obj3.clickdown
+								members[obj.id].challengeStats.countNegative += obj3.clickdown
+								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += obj3.clickdown
+								challenge.challengeStats.countNegative += obj3.clickdown
+
+								if (obj3.clickdown == 0) {
+									obj2.challengeStats.streak.current += obj3.clickup
+								} else if (obj3.clickup == 0) {
+									obj2.challengeStats.streakNeg.current += obj3.clickdown		
+								}
+								
+								if (obj3.clickup != 0) {
+									if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+
+									obj2.challengeStats.streakNeg.current = 0						
+								}
+								
+								if (obj3.clickdown != 0) {
+									if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
+										
+									obj2.challengeStats.streak.current = 0
+								}
+								
+
+							} else {
+							
+								obj3.total = 1
+							
+								if ((obj3.value > tempValuePrev && !(obj2.type == 'habit' && obj2.up == false)) ||  (obj2.type == 'habit' && obj2.down == false) ||  (obj2.type == 'todo') || ((obj3.value == tempValuePrev) && (obj2.type != 'daily'))) {
+									obj3.clickup = 1
+									obj3.clickdown = 0
+
+									obj2.challengeStats.countPositive += 1
+									members[obj.id].challengeStats.countPositive += 1
+									if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += 1
+									challenge.challengeStats.countPositive += 1
+									obj2.challengeStats.streak.current += 1
+									
+									
+									if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+									if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+
+									obj2.challengeStats.streakNeg.current = 0
+									
+								} else if ((obj3.value < tempValuePrev && !(obj2.type == 'habit' && obj2.down == false)) || (obj2.type == 'habit' && obj2.up == false) ) {
+									obj3.clickup = 0
+									obj3.clickdown = 1
+
+									obj2.challengeStats.countNegative += 1
+									members[obj.id].challengeStats.countNegative += 1
+									if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += 1
+									challenge.challengeStats.countNegative += 1
+									obj2.challengeStats.streakNeg.current += 1						
+									
+									if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
+									if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+									if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+									if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
+
+										
+									obj2.challengeStats.streak.current = 0
+
+									
+								} else {	
+									obj2.challengeStats.countNotDue +=1
+									members[obj.id].challengeStats.countNotDue += 1
+									if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNotDue += 1
+									challenge.challengeStats.countNotDue += 1
+								}
+							}
+							
+							
+							//Completion Streak
+							obj2.challengeStats.count += obj3.total
+							members[obj.id].challengeStats.count += obj3.total
+							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.count += obj3.total
+							challenge.challengeStats.count += obj3.total
+							
+								
+							//first & last Active
+							if (obj2.challengeStats.first.utcTime > obj3.datePretty.utcTime || obj2.challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) obj2.challengeStats.first = obj3.datePretty 
+							if (members[obj.id].challengeStats.first.utcTime > obj3.datePretty.utcTime || members[obj.id].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) members[obj.id].challengeStats.first = obj3.datePretty 
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.first.utcTime > obj3.datePretty.utcTime || challengeTasks[challengeTaskIndex].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) challengeTasks[challengeTaskIndex].challengeStats.first = obj3.datePretty 
+							if (obj2.challengeStats.last.utcTime < obj3.datePretty.utcTime) obj2.challengeStats.last = obj3.datePretty 
+							if (members[obj.id].challengeStats.last.utcTime < obj3.datePretty.utcTime) members[obj.id].challengeStats.last = obj3.datePretty 
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.last.utcTime < obj3.datePretty.utcTime) challengeTasks[challengeTaskIndex].challengeStats.last = obj3.datePretty 
+							
+							//TimeDifference
+							obj3.hourDiff = moment(obj3.datePretty.utcTime).diff(moment(tempDatePrev.utcTime), 'hours')
+							if (obj2.challengeStats.timeDiffMin > obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMin = obj3.hourDiff
+							if (obj2.challengeStats.timeDiffMax < obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMax = obj3.hourDiff
+							
+							if (members[obj.id].challengeStats.timeDiffMin.overall > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin.overall == undefined) members[obj.id].challengeStats.timeDiffMin.overall = obj3.hourDiff
+							if (members[obj.id].challengeStats.timeDiffMin[obj2.type] > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMin[obj2.type] = obj3.hourDiff
+							if (members[obj.id].challengeStats.timeDiffMax.overall < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax.overall == undefined) members[obj.id].challengeStats.timeDiffMax.overall = obj3.hourDiff
+							if (members[obj.id].challengeStats.timeDiffMax[obj2.type] < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMax[obj2.type] = obj3.hourDiff
+							
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall > obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall = obj3.hourDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] > obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] = obj3.hourDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall < obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall = obj3.hourDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] < obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] = obj3.hourDiff
+							
+
+
+							
+							//Value Difference
+							obj3.valueDiff = Math.round((obj3.value - tempValuePrev)*1000)/1000
+							if (obj2.challengeStats.valueDiffMin > obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMin = obj3.valueDiff
+							if (obj2.challengeStats.valueDiffMax < obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMax = obj3.valueDiff
+
+							if (members[obj.id].challengeStats.valueDiffMin.overall> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin.overall== undefined) members[obj.id].challengeStats.valueDiffMin.overall= obj3.valueDiff
+							if (members[obj.id].challengeStats.valueDiffMin[obj2.type]> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin[obj2.type]== undefined) members[obj.id].challengeStats.valueDiffMin[obj2.type]= obj3.valueDiff
+							if (members[obj.id].challengeStats.valueDiffMax.overall < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax.overall == undefined) members[obj.id].challengeStats.valueDiffMax.overall = obj3.valueDiff
+							if (members[obj.id].challengeStats.valueDiffMax[obj2.type] < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.valueDiffMax[obj2.type] = obj3.valueDiff
+
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall> obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall== undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall= obj3.valueDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]> obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]== undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]= obj3.valueDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall < obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall = obj3.valueDiff
+							if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] < obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] = obj3.valueDiff
+							
+							addToArray = {};
+							addToArray = {member: members[obj.id], task: obj2, taskHistory: obj3}
+							membersTaskHistory.push(addToArray)
+							
+							//Reset Values
+							tempValuePrev = obj3.value
+							tempDatePrev = obj3.datePretty
+							firstRun = false
+						}); // history
+						
+						//Final Streaks
+						if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
+						if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
+						if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
+						if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
+						if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
+						if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
+
+						if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+						if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+						if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
+						if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+						if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+						if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
+
+						
+									
+						//Add completed to-do or completed daily
+						addToArray = {};
+						addToArray = {member: members[obj.id], task: obj2}
+						membersTask.push(addToArray)
 					});
-					
-					obj2.challengeStats = {}
-					
-					obj2.challengeStats.streak = {}
-					obj2.challengeStats.streak.current = 0
-					obj2.challengeStats.streak.min = undefined
-					obj2.challengeStats.streak.max = undefined
-					obj2.challengeStats.streakNeg = {}
-					obj2.challengeStats.streakNeg.current = 0
-					obj2.challengeStats.streakNeg.min = undefined
-					obj2.challengeStats.streakNeg.max = undefined
-					obj2.challengeStats.first = reformatDate(neverDate)
-					obj2.challengeStats.last = reformatDate(neverDate)
-					obj2.challengeStats.count = 0
-					obj2.challengeStats.countPositive = 0
-					obj2.challengeStats.countNegative = 0
-					obj2.challengeStats.countNotDue = 0
-					
-					obj2.challengeStats.timeDiffMin = undefined
-					obj2.challengeStats.timeDiffMax = undefined
-					obj2.challengeStats.valueDiffMin = undefined
-					obj2.challengeStats.valueDiffMax = undefined
-
-				
-					
-					if ((members[obj.id].challengeStats.joined.utcTime > obj2.creation.utcTime) || (members[obj.id].challengeStats.joined.utcTime == myDateConverter(neverDate, 'utcTime'))) members[obj.id].challengeStats.joined = obj2.creation
-					
-					
-					if (obj2.history == undefined) {
-						obj2.history = []
-					}
-					
-					if (obj2.completed) {
-						if (obj2.dateCompleted != undefined) {
-							var tempDate = myDateConverter(obj2.dateCompleted, 'epoch')
-						} else {
-							var tempDate = myDateConverter(obj2.updatedAt, 'epoch')
-							//daily $$$ADd another variable here?
-						}
-					
-						addToArray = {};
-						addToArray = {date: tempDate, value: obj2.value}
-						if (obj2.history.length == 0) obj2.history.push(addToArray)						
-					}
-				
-
-					var tempValuePrev = 0
-					var tempDatePrev = obj2.creation
-					var firstRun = true
-					
-					$.each(obj2.history, function(index3, obj3){
-						modifyTaskHistoryProperties(obj3)
-						
-						if (obj2.type == 'habit') {
-							if (obj3.scoredUp == undefined) obj3.scoredUp = 0 //Maybe we should check values if up or down but the is old data.
-							if (obj3.scoredDown == undefined) obj3.scoredDown = 0 //Maybe we should check values if up or down but the is old data.
-						
-							obj3.clickup = obj3.scoredUp
-							obj3.clickdown = obj3.scoredDown
-							obj3.total = obj3.scoredUp + obj3.scoredDown
-
-							obj2.challengeStats.countPositive += obj3.clickup
-							members[obj.id].challengeStats.countPositive += obj3.clickup
-							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += obj3.clickup
-							challenge.challengeStats.countPositive += obj3.clickup
-							
-							obj2.challengeStats.countNegative += obj3.clickdown
-							members[obj.id].challengeStats.countNegative += obj3.clickdown
-							if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += obj3.clickdown
-							challenge.challengeStats.countNegative += obj3.clickdown
-
-							if (obj3.clickdown == 0) {
-								obj2.challengeStats.streak.current += obj3.clickup
-							} else if (obj3.clickup == 0) {
-								obj2.challengeStats.streakNeg.current += obj3.clickdown		
-							}
-							
-							if (obj3.clickup != 0) {
-								if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-
-								obj2.challengeStats.streakNeg.current = 0						
-							}
-							
-							if (obj3.clickdown != 0) {
-								if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
-								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
-									
-								obj2.challengeStats.streak.current = 0
-							}
-							
-
-						} else {
-						
-							obj3.total = 1
-						
-							if ((obj3.value > tempValuePrev && !(obj2.type == 'habit' && obj2.up == false)) ||  (obj2.type == 'habit' && obj2.down == false) ||  (obj2.type == 'todo') || ((obj3.value == tempValuePrev) && (obj2.type != 'daily'))) {
-								obj3.clickup = 1
-								obj3.clickdown = 0
-
-								obj2.challengeStats.countPositive += 1
-								members[obj.id].challengeStats.countPositive += 1
-								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countPositive += 1
-								challenge.challengeStats.countPositive += 1
-								obj2.challengeStats.streak.current += 1
-								
-								
-								if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-								if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-
-								obj2.challengeStats.streakNeg.current = 0
-								
-							} else if ((obj3.value < tempValuePrev && !(obj2.type == 'habit' && obj2.down == false)) || (obj2.type == 'habit' && obj2.up == false) ) {
-								obj3.clickup = 0
-								obj3.clickdown = 1
-
-								obj2.challengeStats.countNegative += 1
-								members[obj.id].challengeStats.countNegative += 1
-								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNegative += 1
-								challenge.challengeStats.countNegative += 1
-								obj2.challengeStats.streakNeg.current += 1						
-								
-								if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
-								if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
-								if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
-								if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
-
-									
-								obj2.challengeStats.streak.current = 0
-
-								
-							} else {	
-								obj2.challengeStats.countNotDue +=1
-								members[obj.id].challengeStats.countNotDue += 1
-								if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.countNotDue += 1
-								challenge.challengeStats.countNotDue += 1
-							}
-						}
-						
-						
-						//Completion Streak
-						obj2.challengeStats.count += obj3.total
-						members[obj.id].challengeStats.count += obj3.total
-						if (challengeTasks[challengeTaskIndex] != undefined) challengeTasks[challengeTaskIndex].challengeStats.count += obj3.total
-						challenge.challengeStats.count += obj3.total
-						
-							
-						//first & last Active
-						if (obj2.challengeStats.first.utcTime > obj3.datePretty.utcTime || obj2.challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) obj2.challengeStats.first = obj3.datePretty 
-						if (members[obj.id].challengeStats.first.utcTime > obj3.datePretty.utcTime || members[obj.id].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) members[obj.id].challengeStats.first = obj3.datePretty 
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.first.utcTime > obj3.datePretty.utcTime || challengeTasks[challengeTaskIndex].challengeStats.first.utcTime == myDateConverter(neverDate, 'utcTime') ) challengeTasks[challengeTaskIndex].challengeStats.first = obj3.datePretty 
-						if (obj2.challengeStats.last.utcTime < obj3.datePretty.utcTime) obj2.challengeStats.last = obj3.datePretty 
-						if (members[obj.id].challengeStats.last.utcTime < obj3.datePretty.utcTime) members[obj.id].challengeStats.last = obj3.datePretty 
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.last.utcTime < obj3.datePretty.utcTime) challengeTasks[challengeTaskIndex].challengeStats.last = obj3.datePretty 
-						
-						//TimeDifference
-						obj3.hourDiff = moment(obj3.datePretty.utcTime).diff(moment(tempDatePrev.utcTime), 'hours')
-						if (obj2.challengeStats.timeDiffMin > obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMin = obj3.hourDiff
-						if (obj2.challengeStats.timeDiffMax < obj3.hourDiff || firstRun == true) obj2.challengeStats.timeDiffMax = obj3.hourDiff
-						
-						if (members[obj.id].challengeStats.timeDiffMin.overall > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin.overall == undefined) members[obj.id].challengeStats.timeDiffMin.overall = obj3.hourDiff
-						if (members[obj.id].challengeStats.timeDiffMin[obj2.type] > obj3.hourDiff || members[obj.id].challengeStats.timeDiffMin[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMin[obj2.type] = obj3.hourDiff
-						if (members[obj.id].challengeStats.timeDiffMax.overall < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax.overall == undefined) members[obj.id].challengeStats.timeDiffMax.overall = obj3.hourDiff
-						if (members[obj.id].challengeStats.timeDiffMax[obj2.type] < obj3.hourDiff || members[obj.id].challengeStats.timeDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.timeDiffMax[obj2.type] = obj3.hourDiff
-						
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall > obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin.overall = obj3.hourDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] > obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMin[obj2.type] = obj3.hourDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall < obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax.overall = obj3.hourDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] < obj3.hourDiff || challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.timeDiffMax[obj2.type] = obj3.hourDiff
-						
-
-
-						
-						//Value Difference
-						obj3.valueDiff = Math.round((obj3.value - tempValuePrev)*1000)/1000
-						if (obj2.challengeStats.valueDiffMin > obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMin = obj3.valueDiff
-						if (obj2.challengeStats.valueDiffMax < obj3.valueDiff || firstRun == true) obj2.challengeStats.valueDiffMax = obj3.valueDiff
-
-						if (members[obj.id].challengeStats.valueDiffMin.overall> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin.overall== undefined) members[obj.id].challengeStats.valueDiffMin.overall= obj3.valueDiff
-						if (members[obj.id].challengeStats.valueDiffMin[obj2.type]> obj3.valueDiff || members[obj.id].challengeStats.valueDiffMin[obj2.type]== undefined) members[obj.id].challengeStats.valueDiffMin[obj2.type]= obj3.valueDiff
-						if (members[obj.id].challengeStats.valueDiffMax.overall < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax.overall == undefined) members[obj.id].challengeStats.valueDiffMax.overall = obj3.valueDiff
-						if (members[obj.id].challengeStats.valueDiffMax[obj2.type] < obj3.valueDiff || members[obj.id].challengeStats.valueDiffMax[obj2.type] == undefined) members[obj.id].challengeStats.valueDiffMax[obj2.type] = obj3.valueDiff
-
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall> obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall== undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin.overall= obj3.valueDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]> obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]== undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMin[obj2.type]= obj3.valueDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall < obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall == undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax.overall = obj3.valueDiff
-						if (challengeTasks[challengeTaskIndex] != undefined) if (challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] < obj3.valueDiff || challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] == undefined) challengeTasks[challengeTaskIndex].challengeStats.valueDiffMax[obj2.type] = obj3.valueDiff
-						
-						addToArray = {};
-						addToArray = {member: members[obj.id], task: obj2, taskHistory: obj3}
-						membersTaskHistory.push(addToArray)
-						
-						//Reset Values
-						tempValuePrev = obj3.value
-						tempDatePrev = obj3.datePretty
-						firstRun = false
-					}); // history
-					
-					//Final Streaks
-					if (((obj2.challengeStats.streak.min == undefined) || (obj2.challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) obj2.challengeStats.streak.min = obj2.challengeStats.streak.current  
-					if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streak.min == undefined) || (members[obj.id].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) members[obj.id].challengeStats.streak.min = obj2.challengeStats.streak.current  
-					if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streak.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.min > obj2.challengeStats.streak.current)) && (obj2.challengeStats.streak.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streak.min = obj2.challengeStats.streak.current  
-					if ((obj2.challengeStats.streak.max == undefined) || (obj2.challengeStats.streak.max < obj2.challengeStats.streak.current)) obj2.challengeStats.streak.max = obj2.challengeStats.streak.current  
-					if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streak.max == undefined) || (members[obj.id].challengeStats.streak.max < obj2.challengeStats.streak.current)) members[obj.id].challengeStats.streak.max = obj2.challengeStats.streak.current  
-					if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streak.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streak.max < obj2.challengeStats.streak.current)) challengeTasks[challengeTaskIndex].challengeStats.streak.max = obj2.challengeStats.streak.current  
-
-					if (((obj2.challengeStats.streakNeg.min == undefined) || (obj2.challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) obj2.challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-					if (obj2.type != 'todo') if (((members[obj.id].challengeStats.streakNeg.min == undefined) || (members[obj.id].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) members[obj.id].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-					if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if (((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min > obj2.challengeStats.streakNeg.current)) && (obj2.challengeStats.streakNeg.current != 0)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.min = obj2.challengeStats.streakNeg.current  
-					if ((obj2.challengeStats.streakNeg.max == undefined) || (obj2.challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) obj2.challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-					if (obj2.type != 'todo') if ((members[obj.id].challengeStats.streakNeg.max == undefined) || (members[obj.id].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) members[obj.id].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-					if (challengeTasks[challengeTaskIndex] != undefined) if (obj2.type != 'todo') if ((challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max == undefined) || (challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max < obj2.challengeStats.streakNeg.current)) challengeTasks[challengeTaskIndex].challengeStats.streakNeg.max = obj2.challengeStats.streakNeg.current  
-
-					
-								
-					//Add completed to-do or completed daily
-					addToArray = {};
-					addToArray = {member: members[obj.id], task: obj2}
-					membersTask.push(addToArray)
-				});
+				}
 				
 				//Determine Activity
 				if (groupId == 'party' && (members[obj.id].lastChat.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].challengeStats.last.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastLoggedIn.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastDropItem.utcTime < members[obj.id].lastTransformation.occured.utcTime) && (members[obj.id].lastBuff.occured.utcTime < members[obj.id].lastTransformation.occured.utcTime)) {
