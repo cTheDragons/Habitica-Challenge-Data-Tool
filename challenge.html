@@ -457,7 +457,7 @@ var exportOption 			 	= 'babyBear';
 var exportFormat			 	= 1;
 var challengeDropDownShow		= false;
 
-var rlCurrent					= {};
+var rlCurrent					= {}; //holds the Current API Remaining details - must be a better way to do this.
 var ajaxTryAgainMax				= 3;
 var debug						= false;
 var debugShowObject				= false;
@@ -476,6 +476,14 @@ var neverDate = '1900-01-01'
 var notAvailableMember = '-Member Not In Challenge-'
 var noOwner = '-No Owner-'
 var noUsernamePrefix = '-Unknown Username- Display Name: '
+
+
+//////////////////////////////////////////////////////////////////////
+////   Show API Version                   ///////////////////////////
+//////////////////////////////////////////////////////////////////////
+var apiVersion = getApiVersion()
+$('#apiVersion').text(apiVersion);
+
 
 //////////////////////////////////////////////////////////////////////
 ////   allow Show/Hide Toggling to work    ///////////////////////////
@@ -3984,6 +3992,9 @@ h1>a:first-child:hover { /* "Habitica" link in header */
 h1 span {
     font-size: 0.5em;
 }
+h1 span span {
+    font-size: 1.0em;
+}
 h2 {
     margin-top: 30px;
 }
@@ -4201,7 +4212,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.1)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.2 - vApi<span class="apiVersion" id="apiVersion"> NOT INSTALLED !</span>)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4231,6 +4242,14 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>4.2 - Cookie Cutter<span class="date">2020-08-26</span></dt>
+        <dd><ul>
+	        <li>Features:
+                <ul>
+					<li>Showing version of API as well as version of tool</li>
+				</ul>
+			</li>
+		</ul></dd>
 		<dt>4.1 - Warp Speed<span class="date">2020-08-01</span></dt>
         <dd><ul>
 	        <li>Features:
