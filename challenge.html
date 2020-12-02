@@ -64,7 +64,7 @@ var group;	// holds all challenge data
 var memberListToFetch = []; //holds memberList that is fetching (30 limit)  
 var memberListToFetch_idOnly = []; //holds memberList that is fetching (30 limit) 
 var members;  // hold members of challenge participants 
-var membersChallenge;  // hold members of challenge tasks 
+//var membersChallenge;  // hold members of challenge tasks 
 var membersTask; //holds information per task per member
 var membersTaskHistory; //holds information per completion per task per member
 var lastListMemberId = '';  // hold last member id to be used with groups 
@@ -427,13 +427,13 @@ var serverName					= 'Habitica'; // used in "loading" message
 var serverUrl					= 'https://habitica.com/api/v3';
 var serverPathContent			= '/content?language=en';
 var serverPathUser				= '/user';
-var serverPathChallengeForUser  = '/challenges/user?member=true&page='
+var serverPathChallengeForUser  = '/challenges/user?owned=owned&page='
 var serverPathChallenge			= '/challenges'
 var serverPathChallengeTasks	= '/tasks/challenge'
 
 var serverPathGroup				= '/groups' //Guild associated with Challenge
 var serverPathParty				= '/groups/party'
-var serverPathGroupMemberPart	= '/members?limit=60&includeAllPublicFields=true' //will be /groups/:groupId/members //challenge members
+var serverPathGroupMemberPart	= '/members?limit=60&includeTasks=true&includeAllPublicFields=true' //will be /groups/:groupId/members //challenge members
 var serverPathMemberProfilePart	= '/members' //will be /members/:uid //
 var serverMessageUser			= '/members/send-private-message'
 var serverGiftGem				= '/members/transfer-gems'
@@ -837,7 +837,7 @@ function fetchData() {
 	memberListToFetch = [];  // clear from previous fetches
 	memberListToFetch_idOnly = []; // clear from previous fetches
 	members = []; // clear from previous fetches
-	membersChallenge = []; // clear from previous fetches
+	//membersChallenge = []; // clear from previous fetches
 	
 	var listToFetch = [];
 	var listToFetch_Challenge = [];
@@ -1061,10 +1061,11 @@ function fetchData() {
 		$.each(memberListToFetch, function(index, obj){
 			if (members[obj.id] == undefined) {
 				ajaxTryAgainList.push(obj)
-			} 
-			if (membersChallenge[obj.id] == undefined) {
-				ajaxTryAgainList_Challenge.push(obj)
-			}		
+			} else {
+				if (members[obj.id].tasks == undefined) {
+					ajaxTryAgainList_Challenge.push(obj)
+				}
+			}	
 		});
 		
 		ajaxTryAgainNeed = 0 
@@ -1076,6 +1077,7 @@ function fetchData() {
 			
 		
 		if (debugShowObject) console.log(listToFetch.length)
+		if (debugShowObject) console.log(listToFetch_Challenge.length)
 		lastMemberIndex = 0
 		lastMemberChallengeIndex = 0
 		
@@ -1092,10 +1094,9 @@ function fetchData() {
 				if (debug) console.log('debug MEMBER DATA -Yes we are finally here folks ( Challenge ' + obj.id + ')');
 				call.push({requestType: 'GET', urlTo: serverUrl + serverPathChallenge + '/' + challengeId + serverPathMemberProfilePart + '/' + obj.id, newData: '', fnSuccess: fetchMemberChallengeSuccess, fnFailure: fetchMemberChallengeFail, statusText: 'Asking for Member' + SINGLEQUOTE + 's Task Data ... (This can take a while - ' + (index + 1) + ' of ' + listToFetch_Challenge.length + ')'})
 			});
-		}
-		makeAjaxCall(call, userId, apiToken, rlCurrent)		
-	}
-		
+			makeAjaxCall(call, userId, apiToken, rlCurrent)	
+		}	
+	}	
 		
 	function fetchMemberFail(data, rl) {
 		if (debug) console.log('debug Member Fail Fetch for ' + (lastMemberIndex+1))
@@ -1133,7 +1134,7 @@ function fetchData() {
 		if (debug) console.log('debug Member Challenge Sucess data start ' +  lastMemberChallengeIndex + '  id: ' + data.data._id);
 		rlCurrent = rl
 		var friendlyMemberIndex = lastMemberIndex + 1
-		membersChallenge[data.data.id] = data.data;
+		members[data.data.id].tasks = data.data.tasks;
 		
 		lastMemberChallengeIndex++
 		fetchMemberComplete()
@@ -1146,7 +1147,7 @@ function fetchData() {
 				fetchMembers()
 			} else {	
 				if (debugShowObject) console.log(members);
-				if (debugShowObject) console.log(membersChallenge);
+				//if (debugShowObject) console.log(membersChallenge);
 				parseData();
 			}
 		} 
@@ -2647,8 +2648,8 @@ function parseData() {
 				
 			
 				//Calculate task information.
-				if (membersChallenge[obj.id].tasks != undefined) {
-					$.each(membersChallenge[obj.id].tasks, function(index2, obj2){
+				if (members[obj.id].tasks != undefined) {
+					$.each(members[obj.id].tasks, function(index2, obj2){
 						var challengeTaskIndex = challengeTasksRef[obj2.challenge.taskId]
 						modifyTaskProperties(obj2)
 
@@ -4221,7 +4222,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v4.3 - vApi<span class="apiVersion" id="apiVersion"> NOT INSTALLED !</span>)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v5.0 - vApi<span class="apiVersion" id="apiVersion"> NOT INSTALLED !</span>)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4251,6 +4252,14 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>5.0 - Do it Faster, Makes us Stronger <span class="date">2020-11-20</span></dt>
+        <dd><ul>
+	        <li>Features:
+                <ul>
+					<li>Handling for future paratmer of ?tasks. (Yah Faster Downloads)</li>
+					<li>Changing selection to owner for quicker fetch of owned challenges</li>
+				</ul>
+		</ul></dd>
 		<dt>4.3 - Insert name here + New Limits<span class="date">2020-11-20</span></dt>
         <dd><ul>
 	        <li>Features:
