@@ -1347,7 +1347,7 @@ function postGiftGem(rowData, uuidIndex, nameIndex) {
 		}
 		
 		if ((privateMessage != null) && (gemAmount != null) && (isNaN(gemAmount) == false) && (gemAmount > 0)) {
-			if (confirm('Are you sure you wish to send ' + gemAmount + ' gems with the messasge:\n\n' + privateMessage + '\n\n to the selected users?' + actionNotificationList + '\n\nThere is no undo!')){
+			if (confirm('Are you sure you wish to send ' + gemAmount + ' gems with the message:\n\n' + privateMessage + '\n\n to the selected users?' + actionNotificationList + '\n\nThere is no undo!')){
 				actionNotificationList = ''
 				postNextGiftGem()
 			} else {
@@ -4222,7 +4222,7 @@ table#perMemberStats_participantDetails {
 </head>
 <body><div id="innerBody">	
 <h1><a href="https://habitica.com/">Habitica</a> Challenge Data Tool
-    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v5.0 - vApi<span class="apiVersion" id="apiVersion"> NOT INSTALLED !</span>)</span></h1><!-- VERSION TOGGLE -->
+    <span class="showHideToggle" data-target="versionChanges" data-closemainsections="true">(v5.1 - vApi<span class="apiVersion" id="apiVersion"> NOT INSTALLED !</span>)</span></h1><!-- VERSION TOGGLE -->
 <div id="headerExtras"></div>
 <hr class="clear" />
 <div id="headerGroupExtras"></div>
@@ -4252,6 +4252,13 @@ table#perMemberStats_participantDetails {
 <div id="versionChanges" class="hide"><!-- VERSION SECTION -->
     <h2>Version History</h2>
     <dl>
+		<dt>5.1 - Those Who Drink Tea Spot Bugs<span class="date">2021-01-03</span></dt>
+        <dd><ul>
+	        <li>Bug Fixes:
+                <ul>
+					<li>Typo in the gem reward. Thank you @Ceran for spotting this.</li>
+				</ul>
+		</ul></dd>
 		<dt>5.0 - Do it Faster, Makes us Stronger<span class="date">2020-12-02</span></dt>
         <dd><ul>
 	        <li>Features:
