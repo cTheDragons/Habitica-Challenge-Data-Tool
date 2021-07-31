@@ -19,6 +19,7 @@
 // v 1.0 - 2020-07-22 - Creation
 // v 1.1 - 2020-07-22 - Slowed down the sayings. More sayings
 // v 2.0 - 2020-08-23 - Return version to display. More sayings. Few typo corrections.
+// v 2.1 - 2020-08-23 - More Typo Corrections
 
 
 function getApiVersion() {
@@ -161,7 +162,7 @@ function makeAjaxCall(call, userId, apiToken, rl){
 										'Waiting for the cat to get off my laptop...',
 										'Hey wake up sleepy server! We have customers!',
 										'Counting the grains in the sands of time',
-										'Rearranging the furniture while your not looking'
+										'Rearranging the furniture while you are not looking'
 									] //Thank you to @ReyBisCO, @Ceran, @MaybeSteveRogers, @BradleyTheGreat, @DebbieS, @SuperSaraA, @ieahleen, @citrusella, @QuartzFox, @BattleOfTheWarwings, @littlepurpleslipper for contributing to some of the sayings 
 
 
